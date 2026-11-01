@@ -3,6 +3,8 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def ddtCode = Integer.parseInt(String.valueOf(project.findProperty("ddtVersionCode") ?: "1"))
+
 android {
     namespace "com.aykaufman.digdeeper"
     compileSdk 34
@@ -11,8 +13,8 @@ android {
         applicationId "com.aykaufman.digdeeper"
         minSdk 30
         targetSdk 34
-        versionCode (project.findProperty("ddtVersionCode") ?: "1").toInteger()
-        versionName "1." + (project.findProperty("ddtVersionCode") ?: "1")
+        versionCode ddtCode
+        versionName "1." + ddtCode
     }
     buildTypes { release { minifyEnabled false } }
     compileOptions {
