@@ -9,14 +9,24 @@ import { FileOpener } from '@capawesome-team/capacitor-file-opener';
 if (Capacitor.isNativePlatform()) {
 
 // Voice: the Android WebView has no speechSynthesis, so speak through Android's own text-to-speech.
-let queue = [], speaking = false, list = [];
+// Android's plugin never reports back when a phrase is cut off, so each phrase also gets a time limit,
+// and cancelling clears everything at once. Without this the voice went silent after the first interruption.
+let queue = [], speaking = false, list = [], gen = 0;
 function next() {
   if (!queue.length) { speaking = false; return; }
   speaking = true;
-  const u = queue.shift();
-  TextToSpeech.speak({ text: u.text, rate: u.rate || 1, lang: (u.voice && u.voice.lang) || 'en-US', voice: u.voice ? u.voice._i : undefined, category: 'playback' })
-    .catch(() => {})
-    .then(() => { try { u.onend && u.onend(); } catch (e) {} next(); });
+  const my = gen, u = queue.shift();
+  let done = false;
+  const finish = () => {
+    if (done) return; done = true;
+    if (my !== gen) return;               // cancelled meanwhile: a new phrase already took over
+    try { u.onend && u.onend(); } catch (e) {}
+    next();
+  };
+  const rate = u.rate || 1;
+  setTimeout(finish, (String(u.text).length * 80) / rate + 2500);
+  TextToSpeech.speak({ text: u.text, rate, lang: (u.voice && u.voice.lang) || 'en-US', voice: u.voice ? u.voice._i : undefined, category: 'playback' })
+    .then(finish, finish);
 }
 const synth = {
   get speaking() { return speaking; },
@@ -24,7 +34,7 @@ const synth = {
   onvoiceschanged: null,
   getVoices() { return list; },
   speak(u) { queue.push(u); if (!speaking) next(); },
-  cancel() { queue = []; TextToSpeech.stop().catch(() => {}); },
+  cancel() { gen++; queue = []; speaking = false; TextToSpeech.stop().catch(() => {}); },
   pause() {}, resume() {}
 };
 Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
