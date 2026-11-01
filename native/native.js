@@ -140,8 +140,8 @@ App.addListener('backButton', () => {
   // ---------- Update button ----------
   const REPO = 'aykaufman/dig-deeper-timer';
   let update = null, lastCheck = 0;
-  async function checkUpdate() {
-    if (Date.now() - lastCheck < 10 * 60 * 1000) return; lastCheck = Date.now();
+  async function checkUpdate(force) {
+    if (!force && Date.now() - lastCheck < 2 * 60 * 1000) return; lastCheck = Date.now();
     try {
       const [info, res] = await Promise.all([App.getInfo(), fetch(`https://api.github.com/repos/${REPO}/releases/latest`)]);
       if (!res.ok) return;
@@ -184,8 +184,11 @@ App.addListener('backButton', () => {
   const start = () => {
     setTimeout(savePhotos, 800);
     checkUpdate();
-    setInterval(banner, 1000);
+    // check while the app stays open: every 5 minutes, and whenever you come back to the home screen
+    let wasHome = false;
+    setInterval(() => { const home = !!document.querySelector('.hello'); if (home && !wasHome) checkUpdate(); wasHome = home; banner(); }, 1000);
+    setInterval(() => checkUpdate(true), 5 * 60 * 1000);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  App.addListener('resume', () => { checkUpdate(); savePhotos(); });
+  App.addListener('resume', () => { checkUpdate(true); savePhotos(); });
 }
