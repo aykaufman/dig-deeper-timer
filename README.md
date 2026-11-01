@@ -33,3 +33,12 @@ Updates install over the old version and keep your logged workouts.
 The `native/` folder holds the Android-only pieces: phone voice (Android text-to-speech), backup via the share sheet,
 the back button, keeping the screen on, and the app icon. The signing key lives in two repository secrets,
 `ANDROID_KEYSTORE_B64` and `ANDROID_KEYSTORE_PASSWORD`, so every update is signed the same way and installs over the last one.
+
+## Galaxy Watch app
+
+`wear/` is a small Wear OS app that works as a remote for the phone app: it shows the current move or rest with a countdown,
+− / + for weight and reps, Done, Skip rest, +15 s and Pause, and buzzes at each new step. The phone runs the workout; the
+watch app talks to it over the normal watch connection (same app ID and signing key as the phone app).
+
+Download: https://github.com/aykaufman/dig-deeper-timer/releases/latest/download/dig-deeper-watch.apk
+Install it with Wear Installer 2 after turning on ADB debugging and Wireless debugging in the watch's Developer options.
