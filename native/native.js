@@ -18,6 +18,7 @@ window.__session = {
   update: o => WS.update(o),
   stop: () => WS.stop(),
   askNotifications: () => WS.requestNotifications(),
+  test: () => WS.requestNotifications().then(() => WS.test()),
   onAction: f => wsSubs.action.push(f),
   onTick: f => wsSubs.tick.push(f)
 };

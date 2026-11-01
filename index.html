@@ -603,6 +603,7 @@ function home(){
     <div class="days">${DAYS.map(d=>{const st=build(C.k,d);if(!st.length)return"";return `<button class="day" data-d="${d}"><span class="dw">${SHOW[d]}</span><span><b>${esc(wname(C.k,d))}</b><small>${d==="Sat"?"Optional low-impact cardio":moveList(st).length+" moves"}</small></span><span class="num">~${mins(estimate(st))}</span></button>`}).join("")}</div>`;
   h+=`<details class="card" id="sets"><summary>Settings</summary>
     ${dumbbellRow()}
+    ${window.__session&&window.__session.test?`<div class="set-row"><label>Watch notifications<small>Sends a test so you can check it shows on your Galaxy Watch</small></label><button class="sm sec" id="wtest">Send test</button></div><p class="note" id="wtestmsg" style="margin:0 0 8px"></p>`:""}
     ${sel("restMove","Rest between moves","Inside a circuit or superset",[0,5,10,15,20,30],v=>v?v+" s":"None")}
     ${sel("restRound","Rest between rounds","After each full circuit",[30,45,60,75,90,120],v=>v+" s")}
     ${sel("restSet","Rest between sets","Single exercises, set by set",[30,45,60,75,90],v=>v+" s")}
@@ -635,6 +636,7 @@ function home(){
   fillVoices();
   const ri=$("#reintro");if(ri)ri.onclick=()=>{store("ddt-onboarded",null);intro()};
   const wp=$("#wipe");if(wp)wp.onclick=askWipe;bindSync();bindDumbbells();
+  {const wt=$("#wtest");if(wt)wt.onclick=()=>{window.__session.test().then(r=>{const m=$("#wtestmsg");if(m)m.textContent=r&&r.granted===false?"Notifications are turned off for Dig Deeper. Allow them in your phone's app settings.":"Sent. Lock your phone or turn the screen off, then look at your watch."}).catch(()=>{})}}
   const tv=$("#testv");if(tv)tv.onclick=()=>say("Next, shoulder press. Grab the 25s.",true,S.describe!=="off"?spoken("Shoulder Press"):"");
   $$("#sets select").forEach(s=>s.onchange=()=>{const v=s.value;S[s.id]=s.id==="voiceName"?v:(isNaN(+v)?v:+v);store("ddt-settings",S);home();$("#sets").open=true;if(s.id==="hashem")say(kavSpoken(),true)});
   const g=$("#gonext");if(g)g.onclick=()=>start(COLL[collOfWeek(nx.w)].k,nx.d,nx.w);
@@ -1017,6 +1019,7 @@ function parseWR(text,ex){
   return{w,r:r!=null?Math.max(0,Math.round(r)):null};
 }
 function remoteAction(a){
+  if(a&&a.id==="testok"){toast("Watch test worked");return}
   if(!P||!P.started||P.done||!a)return;
   const s=P.steps[P.i];if(!s)return;
   const togglePause=()=>{P.paused=!P.paused;if(!P.paused)P.end=Date.now()+P.left*1000;else{P.left=Math.max(0,(P.end-Date.now())/1000);try{speechSynthesis.cancel()}catch(e){}}render()};

@@ -81,6 +81,12 @@ class WorkoutSessionPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun test(call: PluginCall) {
+        WorkoutService.test(context)
+        val r = JSObject(); r.put("granted", notificationsGranted()); call.resolve(r)
+    }
+
+    @PluginMethod
     fun stop(call: PluginCall) {
         context.stopService(Intent(context, WorkoutService::class.java))
         call.resolve()

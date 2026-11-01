@@ -24,6 +24,7 @@ class WorkoutService : Service() {
         const val CH_LIVE = "ddt_live"
         const val ID_RUN = 4101
         const val ID_LIVE = 4102
+        const val ID_TEST = 4103
         const val INPUT_KEY = "ddt_input"
 
         @Volatile var state: JSONObject = JSONObject()
@@ -71,7 +72,9 @@ class WorkoutService : Service() {
                 .setContentTitle(s.optString("title", "Workout"))
                 .setContentText(s.optString("text", ""))
                 .setStyle(NotificationCompat.BigTextStyle().bigText(s.optString("text", "")))
-                .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setLocalOnly(false)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(!alert)
                 .setAutoCancel(false)
@@ -81,6 +84,7 @@ class WorkoutService : Service() {
             } else {
                 b.setShowWhen(false)
             }
+            val wear = NotificationCompat.WearableExtender()
             val actions = s.optJSONArray("actions")
             if (actions != null) {
                 for (k in 0 until actions.length()) {
@@ -101,10 +105,25 @@ class WorkoutService : Service() {
                         }
                         ab.addRemoteInput(rb.build()).setAllowGeneratedReplies(false)
                     }
-                    b.addAction(ab.build())
+                    val built = ab.build()
+                    b.addAction(built)
+                    wear.addAction(built)
                 }
             }
+            b.extend(wear)
             return b.build()
+        }
+
+        fun test(ctx: Context) {
+            val saved = state
+            state = JSONObject().put("title", "Dig Deeper watch test")
+                .put("text", "If you can see this on your watch, workout steps will show there too.")
+                .put("actions", org.json.JSONArray().put(JSONObject().put("id", "testok").put("label", "Got it")))
+            try {
+                channels(ctx)
+                NotificationManagerCompat.from(ctx).notify(ID_TEST, liveNotification(ctx, true))
+            } catch (e: SecurityException) {}
+            state = saved
         }
 
         fun post(ctx: Context, alert: Boolean) {
