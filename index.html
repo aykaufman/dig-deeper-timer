@@ -810,7 +810,8 @@ function enter(i){
     const n=upcoming(i),pw=prevWork(i),nm=n&&(!pw||pw.ex!==n.ex),w=n&&weighted(n.ex)?pickW(n.ex):null;
     const grab=nm&&w?` Grab the ${w}s.`:"";
     let desc="";if(n&&nm&&S.describe!=="off"&&!(P.described||(P.described=new Set())).has(n.ex)){P.described.add(n.ex);desc=spoken(n.ex)}
-    say(s.t==="prep"?`Get ready. ${n?n.ex:""}.${grab}`:`Rest ${s.dur} seconds. Next, ${n?n.ex:"done"}.${grab}`,false,desc);
+    const pre=P._said?P._said+" ":"";P._said=null;
+    say(s.t==="prep"?`${pre}Get ready. ${n?n.ex:""}.${grab}`:`${pre}Rest ${s.dur} seconds. Next, ${n?n.ex:"done"}.${grab}`,false,desc);
   }
   saveRes();render();
 }
@@ -971,8 +972,17 @@ function sessionSync(){
 }
 function sessionStop(){if(SESSION_ON&&window.__session){SESSION_ON=false;window.__session.stop().catch(()=>{})}}
 /* "25 12", "25 lb × 12", "25 by 12", "2512", or just "12" */
+const NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fourty:40,fifty:50};
+/* "twenty five by twelve" -> "25 by 12" */
+function wordsToDigits(t){
+  const out=[];let cur=null;
+  for(const w of t.replace(/-/g," ").split(/\s+/)){const n=NUMW[w];
+    if(n==null){if(cur!=null){out.push(cur);cur=null}out.push(w);continue}
+    if(cur!=null&&cur>=20&&cur%10===0&&n>0&&n<10){cur+=n;continue}
+    if(cur!=null)out.push(cur);cur=n}
+  if(cur!=null)out.push(cur);return out.join(" ")}
 function parseWR(text,ex){
-  const t=String(text||"").toLowerCase(),nums=(t.match(/\d+(\.\d+)?/g)||[]).map(Number);
+  const t=wordsToDigits(String(text||"").toLowerCase()),nums=(t.match(/\d+(\.\d+)?/g)||[]).map(Number);
   const snap=w=>WEIGHTS.reduce((a,b)=>Math.abs(b-w)<Math.abs(a-w)?b:a);
   let w=null,r=null;
   if(nums.length>=2){w=nums[0];r=nums[1]}
@@ -990,7 +1000,8 @@ function remoteAction(a){
   if(a.id==="pause")return togglePause();
   if(s.t==="work"){
     if(a.id==="done"){if(P.paused&&P.total)P.paused=false;if(P.total)logNow();else main();return}
-    if(a.id==="log"){const v=parseWR(a.text,s.ex);if(v.w!=null&&weighted(s.ex))P.wsel[s.ex]=v.w;if(v.r!=null&&maxReps(s))P.rsel=Math.min(maxReps(s),v.r);if(P.total)logNow();else main();return}
+    if(a.id==="log"){const v=parseWR(a.text,s.ex);if(v.w!=null&&weighted(s.ex))P.wsel[s.ex]=v.w;if(v.r!=null&&maxReps(s))P.rsel=Math.min(maxReps(s),v.r);
+      {const lw=weighted(s.ex)?pickW(s.ex):null,lr=maxReps(s)?(P.rsel??maxReps(s)):null;P._said=`Logged${lw?" "+lw+" pounds":""}${lw&&lr!=null?",":""}${lr!=null?" "+lr+" reps":""}.`+(v.w==null&&v.r==null?" I didn't catch numbers, so I used your current picks.":"")}if(P.total)logNow();else main();return}
   }else{
     if(a.id==="skip")return enter(P.i+1);
     if(a.id==="more"){addRest();return sessionSync()}
