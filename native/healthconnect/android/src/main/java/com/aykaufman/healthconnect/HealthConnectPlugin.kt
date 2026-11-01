@@ -8,6 +8,7 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
@@ -35,7 +36,8 @@ class HealthConnectPlugin : Plugin() {
         HealthPermission.getWritePermission(ExerciseSessionRecord::class),
         HealthPermission.getWritePermission(ActiveCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(WeightRecord::class),
-        HealthPermission.getWritePermission(WeightRecord::class)
+        HealthPermission.getWritePermission(WeightRecord::class),
+        HealthPermission.getReadPermission(HeartRateRecord::class)
     )
 
     private fun client() = HealthConnectClient.getOrCreate(context)
@@ -48,6 +50,7 @@ class HealthConnectPlugin : Plugin() {
         r.put("canWriteWorkouts", granted.contains(HealthPermission.getWritePermission(ExerciseSessionRecord::class)))
         r.put("canReadWeight", granted.contains(HealthPermission.getReadPermission(WeightRecord::class)))
         r.put("canWriteWeight", granted.contains(HealthPermission.getWritePermission(WeightRecord::class)))
+        r.put("canReadHeartRate", granted.contains(HealthPermission.getReadPermission(HeartRateRecord::class)))
         return r
     }
 
@@ -172,6 +175,40 @@ class HealthConnectPlugin : Plugin() {
                 }
                 val r = JSObject()
                 r.put("weights", arr)
+                call.resolve(r)
+            } catch (e: Exception) {
+                call.reject(e.message ?: "read failed")
+            }
+        }
+    }
+
+    @PluginMethod
+    fun readHeartRate(call: PluginCall) {
+        val startMs = call.data.optLong("start", 0L)
+        val endMs = call.data.optLong("end", 0L)
+        if (startMs <= 0L || endMs <= startMs) {
+            call.reject("start and end are required")
+            return
+        }
+        val start = Instant.ofEpochMilli(startMs)
+        val end = Instant.ofEpochMilli(endMs)
+        scope.launch {
+            try {
+                val res = client().readRecords(
+                    ReadRecordsRequest(HeartRateRecord::class, timeRangeFilter = TimeRangeFilter.between(start, end))
+                )
+                val arr = JSArray()
+                for (rec in res.records) {
+                    for (s in rec.samples) {
+                        if (s.time.isBefore(start) || s.time.isAfter(end)) continue
+                        val o = JSObject()
+                        o.put("time", s.time.toEpochMilli())
+                        o.put("bpm", s.beatsPerMinute)
+                        arr.put(o)
+                    }
+                }
+                val r = JSObject()
+                r.put("samples", arr)
                 call.resolve(r)
             } catch (e: Exception) {
                 call.reject(e.message ?: "read failed")

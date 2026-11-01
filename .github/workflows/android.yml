@@ -2,7 +2,7 @@ name: Build Android app
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 permissions:
@@ -60,6 +60,7 @@ jobs:
           ls -lh dig-deeper-timer.apk
 
       - name: Publish as a release
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.${{ github.run_number }}
