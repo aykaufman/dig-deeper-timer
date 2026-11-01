@@ -66,7 +66,7 @@ window.__nativeSave = async (name, data) => {
 App.addListener('backButton', () => {
   const pick = s => document.querySelector(s);
   const lb = pick('.lb'); if (lb) { lb.click(); return; }
-  const btn = pick('#pmx') || pick('#exit') || pick('#back');
+  const btn = pick('#rvx') || pick('#pmx') || pick('#exit') || pick('#back');
   if (btn) { btn.click(); return; }
   App.minimizeApp();
 });

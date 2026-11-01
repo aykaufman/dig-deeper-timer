@@ -260,6 +260,23 @@ body.fsmode .move h1{font-size:1.5rem}
 .coachtxt{margin:0;white-space:pre-line;font-size:.95rem;line-height:1.5}
 .coach .sm{align-self:flex-start}
 .coach .sm:disabled{opacity:.6}
+/* move review sheet (before starting a workout) */
+button.li.mv{width:100%;background:none;border:0;border-top:1px solid var(--line);text-align:left;font:inherit;color:inherit;cursor:pointer}
+button.li.mv .num::after{content:"›";margin-left:8px;font-size:1.2rem;color:var(--muted)}
+.rv{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
+.rvs{background:var(--bg);width:100%;max-width:620px;max-height:94vh;overflow:auto;border-radius:26px 26px 0 0;padding:0 0 max(18px,env(safe-area-inset-bottom,0px))}
+@media (min-width:700px){.rv{align-items:center}.rvs{border-radius:26px}}
+.rvs .shot{aspect-ratio:3/2;background:#12100E;border-radius:26px 26px 0 0;overflow:hidden;cursor:zoom-in}
+.rvs .shot img{width:100%;height:100%;object-fit:contain;display:block}
+.rvb{padding:16px 18px 0;display:flex;flex-direction:column;gap:12px}
+.rvb h2{font-size:1.6rem;line-height:1.1}
+.rvb p{margin:0}
+.rvsets{display:flex;gap:6px;flex-wrap:wrap}
+.rvsets span{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 10px;font-weight:600;font-size:.9rem;font-variant-numeric:tabular-nums}
+.rvnav{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.rvnav button{height:48px;border:0;border-radius:14px;background:var(--card);font-weight:700;color:var(--ink)}
+.rvnav button:disabled{opacity:.35}
+.rvx{position:absolute;z-index:3;margin:12px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(10,14,20,.7);color:#fff;font-size:1.3rem;line-height:1}
 /* keep the photo on the same side during work and rest */
 @media (min-width:900px){.cols.rest>.colB{order:-1}}
 @media (orientation:landscape){body.fsmode .cols.rest{grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr)}body.fsmode .cols.rest>.colB{order:-1;position:sticky;top:8px}body.fsmode .cols.rest>.colA{position:static}}
@@ -761,7 +778,7 @@ let lock=null;async function wake(){try{lock=await navigator.wakeLock.request("s
 
 /* ---------- Player ---------- */
 let P=null,tick=null;
-function stopAll(){try{if(P&&P.pm)closePM()}catch(e){}clearInterval(tick);tick=null;try{speechSynthesis.cancel()}catch(e){};try{lock&&lock.release()}catch(e){};lock=null}
+function stopAll(){closeReview();try{if(P&&P.pm)closePM()}catch(e){}clearInterval(tick);tick=null;try{speechSynthesis.cancel()}catch(e){};try{lock&&lock.release()}catch(e){};lock=null}
 function start(c,d,week,res){
   const steps=build(c,d);
   P={c,d,w:wname(c,d),steps,moves:moveList(steps),week:week??weekFor(c,d),i:0,end:0,left:0,total:0,paused:true,started:false,log:[],wsel:{},rsel:null,ms:0,lastT:0,t0:Date.now(),sid:"s"+Date.now()+"-"+Math.random().toString(36).slice(2,6)};
@@ -842,7 +859,7 @@ function render(){
     h+=moveCard(show,`${P.week?"Week "+P.week+" · ":""}${DAYNAME[P.d]}`,"",`<b>${esc(P.w)}</b> · ${P.moves.length} moves · about ${mins(estimate(P.steps))}`);
     h+=`<button class="big" id="main">${P.resumed?"Resume workout":"Start workout"}</button></div><div class="colB">`;
     const info={};P.steps.forEach(x=>{if(x.t==="work"&&!info[x.ex])info[x.ex]={sets:0,s:x};if(x.t==="work")info[x.ex].sets++});
-    h+=`<div class="card plan"><div class="list">${P.moves.map((m,i)=>{const o=info[m],L=lastInfo(m);return `<div class="li"><span><b>${i+1}. ${esc(m)}</b><small>${o.sets} set${o.sets>1?"s":""} · ${o.s.dur?o.s.dur+" s":esc(o.s.reps)+(/^\d+$/.test(o.s.reps)?" reps":"")}${IMG[m]?"":" · no photo yet"}</small></span><span class="num">${weighted(m)?(L?L.w+" lb":"DBs"):"Body"}</span></div>`}).join("")}</div></div>`;
+    h+=`<div class="card plan"><div class="list">${P.moves.map((m,i)=>{const o=info[m],L=lastInfo(m);return `<button class="li mv" data-i="${i}" aria-label="Review ${esc(m)}"><span><b>${i+1}. ${esc(m)}</b><small>${o.sets} set${o.sets>1?"s":""} · ${o.s.dur?o.s.dur+" s":esc(o.s.reps)+(/^\d+$/.test(o.s.reps)?" reps":"")}${IMG[m]?"":" · no photo yet"}</small></span><span class="num">${weighted(m)?(L?L.w+" lb":"DBs"):"Body"}</span></button>`}).join("")}</div></div><p class="note" style="margin:0">Tap a move to review it.</p>`;
   }else if(work){
     const tag=s.circuit?`Round ${s.round} of ${s.rounds}`:(s.sets>1?`Set ${s.set} of ${s.sets}`:"Go");
     const L=lastInfo(s.ex),max=maxReps(s);
@@ -888,6 +905,7 @@ function render(){
   h+=`</div></div>`;
   $("#app").innerHTML=h;
   $("#exit").onclick=home;
+  $$("button.li.mv").forEach(b=>b.onclick=()=>openReview(+b.dataset.i));
   $$(".shot img").forEach(im=>{im.insertAdjacentHTML("afterend",`<div class="half" style="background-image:url('${im.src}')" aria-hidden="true"></div><div class="half r" style="background-image:url('${im.src}')" aria-hidden="true"></div>`);im.parentElement.onclick=()=>openPM()});
   bindFS();
   if(P.pm)drawPM();
@@ -915,6 +933,34 @@ function bindFS(){$$("#fsapp").forEach(b=>b.onclick=()=>setBig(!BIG))}
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&BIG)setBig(false)});
 /* ---------- Photo mode: big picture over everything, timer keeps running ---------- */
 function openPM(){P.pm=true;drawPM();try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el).then(()=>{try{screen.orientation.lock("landscape").catch(()=>{})}catch(e){}}).catch(()=>{})}catch(e){}}
+/* ---------- Review a move before starting ---------- */
+function openReview(i){
+  const m=P.moves[i];if(!m)return;
+  const steps=P.steps.filter(x=>x.t==="work"&&x.ex===m),s0=steps[0]||{};
+  const tg=steps.map(x=>x.dur?(x.dur>=120?Math.round(x.dur/60)+" min":x.dur+" s"):maxReps(x)+" reps");
+  const PV=(()=>{for(const s of SESS){const L=(s.log||[]).filter(l=>l.ex===m);if(L.length)return{date:s.date,sets:L}}return null})();
+  const L=lastInfo(m),pic=IMG[m];
+  const last=PV?PV.sets.map((l,k)=>`<span>${k+1}: ${l.w?l.w+" lb":""}${l.w&&l.reps!=null?" × ":""}${l.reps!=null?l.reps:(l.w?"":"done")}</span>`).join(""):"";
+  const el=document.createElement("div");el.className="rv";el.id="rv";
+  el.innerHTML=`<div class="rvs" role="dialog" aria-modal="true" aria-label="${esc(m)}">
+    <button class="rvx" id="rvx" aria-label="Close">×</button>
+    ${pic?`<div class="shot" id="rvpic"><img src="${pic}" alt="${esc(m)} start and finish"></div>`:""}
+    <div class="rvb">
+      <div><span class="kick muted">Move ${i+1} of ${P.moves.length}${s0.note?" · "+esc(s0.note):""}</span><h2>${esc(m)}</h2></div>
+      <div class="rvsets">${tg.map((t,k)=>`<span>${steps.length>1?(s0.circuit?"Round ":"Set ")+(k+1)+": ":""}${t}</span>`).join("")}</div>
+      ${SETUP[m]?`<p>${esc(SETUP[m])}</p>`:""}
+      ${weighted(m)?`<div class="card pad" style="padding:14px 16px"><b style="display:block;margin-bottom:6px">Last time${PV?" · "+fmtDate(PV.date):""}</b>${PV?`<div class="rvsets">${last}</div>`:`<span class="note" style="margin:0">No log yet. Pick your weight when the set starts.</span>`}${L&&L.next?`<p class="up" style="margin-top:8px">You hit every rep. Try ${L.next} lb.</p>`:""}</div>`:""}
+      <div class="rvnav"><button id="rvp" ${i===0?"disabled":""}>‹ Prev</button><button id="rvh">Hear it</button><button id="rvn" ${i===P.moves.length-1?"disabled":""}>Next ›</button></div>
+    </div></div>`;
+  closeReview();document.body.appendChild(el);
+  const close=()=>{closeReview();try{speechSynthesis.cancel()}catch(e){}};
+  el.onclick=e=>{if(e.target===el)close()};
+  $("#rvx").onclick=close;
+  $("#rvp").onclick=()=>openReview(i-1);$("#rvn").onclick=()=>openReview(i+1);
+  $("#rvh").onclick=()=>say(`${m}. ${tg.join(", ")}.`,true,spoken(m));
+  const pc=$("#rvpic");if(pc)pc.onclick=()=>{const lb=document.createElement("div");lb.className="lb";lb.style.zIndex=75;lb.innerHTML=`<b>${esc(m)}</b><img src="${pic}" alt="">`;lb.onclick=()=>lb.remove();document.body.appendChild(lb)};
+}
+function closeReview(){const r=$("#rv");if(r)r.remove()}
 function closePM(){P.pm=false;const d=$("#pm");if(d)d.remove();try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){};try{screen.orientation.unlock()}catch(e){}}
 function drawPM(){
   if(!P)return;const s=P.steps[P.i];if(!s){closePM();return}
