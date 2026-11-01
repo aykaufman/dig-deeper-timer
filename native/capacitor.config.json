@@ -1,0 +1,6 @@
+{
+  "appId": "com.aykaufman.digdeeper",
+  "appName": "Dig Deeper",
+  "webDir": "www",
+  "android": { "backgroundColor": "#F5F1EA" }
+}
