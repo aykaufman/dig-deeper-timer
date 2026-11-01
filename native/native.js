@@ -80,41 +80,62 @@ App.addListener('backButton', () => {
   let base = ls('ddt-photobase', '');
   window.__img = f => (base && saved.has(f)) ? base + f : REMOTE + f;
 
-  function pill(text, keepMs) {
+  function pill(text, keepMs, onTap) {
     let el = document.getElementById('ddt-pill');
     if (!text) { if (el) el.remove(); return; }
     if (!el) {
       el = document.createElement('div'); el.id = 'ddt-pill';
-      el.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:80;background:rgba(26,23,20,.88);color:#fff;font:600 13px/1.2 Figtree,system-ui,sans-serif;padding:8px 12px;border-radius:999px;pointer-events:none';
+      el.style.cssText = 'position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:80;background:rgba(26,23,20,.9);color:#fff;font:600 13px/1.25 Figtree,system-ui,sans-serif;padding:9px 14px;border-radius:999px;max-width:calc(100% - 24px)';
       document.body.appendChild(el);
     }
     el.textContent = text;
+    el.style.pointerEvents = onTap ? 'auto' : 'none';
+    el.onclick = onTap ? () => { el.remove(); onTap(); } : null;
     if (keepMs) setTimeout(() => { if (el.textContent === text) el.remove(); }, keepMs);
   }
 
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let saving = false;
   async function savePhotos() {
+    if (saving) return; saving = true;
     try {
-      const u = await Filesystem.getUri({ directory: Directory.Data, path: 'img' });
-      base = Capacitor.convertFileSrc(u.uri) + '/'; lsSet('ddt-photobase', base);
-    } catch (e) { return; }
-    const all = [...new Set(Object.values(window.__LOCAL || {}))];
-    const todo = all.filter(f => !saved.has(f));
-    if (!todo.length) return;
-    let done = all.length - todo.length, failed = 0;
-    const show = () => pill(`Saving photos to your phone · ${done} of ${all.length}`);
-    show();
-    const worker = async () => {
-      while (todo.length) {
-        const f = todo.shift();
-        try {
-          await Filesystem.downloadFile({ url: REMOTE + f, path: 'img/' + f, directory: Directory.Data, recursive: true });
-          saved.add(f); lsSet('ddt-photos', [...saved]); done++; show();
-        } catch (e) { failed++; }
+      try {
+        const u = await Filesystem.getUri({ directory: Directory.Data, path: 'img' });
+        base = Capacitor.convertFileSrc(u.uri) + '/'; lsSet('ddt-photobase', base);
+      } catch (e) { return; }
+      // make the folder once up front (several downloads creating it at the same moment can fail)
+      try { await Filesystem.mkdir({ path: 'img', directory: Directory.Data, recursive: true }); } catch (e) {}
+      const all = [...new Set(Object.values(window.__LOCAL || {}))];
+      let todo = all.filter(f => !saved.has(f));
+      if (!todo.length) return;
+      const show = () => pill(`Saving photos to your phone · ${saved.size} of ${all.length}`);
+      show();
+      // up to 4 passes; each photo gets 3 tries per pass with a growing pause
+      for (let pass = 0; pass < 4 && todo.length; pass++) {
+        if (pass) { pill(`Still saving photos · ${saved.size} of ${all.length}`); await wait(15000 * pass); }
+        const queue = todo.slice(), failed = [];
+        const worker = async () => {
+          while (queue.length) {
+            const f = queue.shift();
+            let ok = false;
+            for (let t = 0; t < 3 && !ok; t++) {
+              try {
+                await Filesystem.downloadFile({ url: REMOTE + f, path: 'img/' + f, directory: Directory.Data, connectTimeout: 30000, readTimeout: 120000 });
+                const st = await Filesystem.stat({ path: 'img/' + f, directory: Directory.Data });
+                if (st && st.size > 10000) ok = true; else throw new Error('empty');
+              } catch (e) { await wait(2000 * (t + 1)); }
+            }
+            if (ok) { saved.add(f); lsSet('ddt-photos', [...saved]); show(); } else failed.push(f);
+          }
+        };
+        await Promise.all([worker(), worker()]);
+        todo = failed;
       }
-    };
-    await Promise.all([worker(), worker(), worker()]);
-    pill(failed ? 'Some photos didn\'t save. They\'ll finish next time you\'re online.' : 'All photos saved on your phone.', 4000);
+      if (todo.length) pill(`${todo.length} photo${todo.length > 1 ? 's' : ''} didn't save. Tap to try again.`, 0, savePhotos);
+      else pill('All photos saved on your phone.', 4000);
+    } finally { saving = false; }
   }
+  window.addEventListener('online', () => savePhotos());
 
   // ---------- Update button ----------
   const REPO = 'aykaufman/dig-deeper-timer';
@@ -166,5 +187,5 @@ App.addListener('backButton', () => {
     setInterval(banner, 1000);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  App.addListener('resume', checkUpdate);
+  App.addListener('resume', () => { checkUpdate(); savePhotos(); });
 }
