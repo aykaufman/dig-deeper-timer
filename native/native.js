@@ -3,7 +3,7 @@ import { TextToSpeech } from '@capacitor-community/text-to-speech';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { App } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { FileOpener } from '@capawesome-team/capacitor-file-opener';
 
 if (Capacitor.isNativePlatform()) {
@@ -43,6 +43,18 @@ TextToSpeech.getSupportedVoices().then(r => {
   list = (r.voices || []).map((v, i) => ({ name: v.name || v.voiceURI, lang: v.lang || 'en-US', _i: i }));
   try { synth.onvoiceschanged && synth.onvoiceschanged(); } catch (e) {}
 }).catch(() => {});
+
+// ---------- Health Connect ----------
+const HC = registerPlugin('HealthConnect');
+window.__hc = {
+  status: () => HC.status(),
+  request: () => HC.request(),
+  saveWorkout: o => HC.saveWorkout(o),
+  saveWeight: o => HC.saveWeight(o),
+  readWeights: o => HC.readWeights(o),
+  openSettings: () => HC.openSettings(),
+  install: () => HC.install()
+};
 
 // Backup: write the CSV and open Android's share sheet (save to Files, Drive, email…).
 window.__nativeSave = async (name, data) => {

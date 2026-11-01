@@ -476,6 +476,33 @@ function ring(size,stroke,frac,cls,inner){
 }
 
 /* ---------- Home ---------- */
+/* ---------- Health Connect (Android app only) ---------- */
+let HCSYNCED=false;
+async function hcPaint(){
+  const el=$("#hcrow");if(!el||!window.__hc)return;
+  let st;try{st=await window.__hc.status()}catch(e){st={available:false}}
+  const row=(txt,btn,id)=>`<div style="display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:14px"><div style="flex:1;min-width:0"><b style="display:block">Health Connect</b><span class="note" style="margin:0">${txt}</span></div>${btn?`<button class="sm ${id==="hcgo"?"pri":"sec"}" id="${id}">${btn}</button>`:""}</div>`;
+  if(!st.available)el.innerHTML=row(st.needsInstall?"Needs an update from the Play Store before it can connect.":"Not on this phone yet. Install it to sync workouts and weight.","Install","hcinst");
+  else if(st.connected){if(S.hc!=="on"){S.hc="on";store("ddt-settings",S)}el.innerHTML=row("Connected. Workouts, calories and weight sync automatically.","Manage","hcset")}
+  else el.innerHTML=row("Send each workout and its calories to Health Connect, and pull in your weight from a scale or other apps.","Connect","hcgo");
+  const b=$("#hcgo");if(b)b.onclick=hcConnect;
+  const m=$("#hcset");if(m)m.onclick=()=>window.__hc.openSettings().catch(()=>{});
+  const i=$("#hcinst");if(i)i.onclick=()=>window.__hc.install().catch(()=>{});
+}
+async function hcConnect(){
+  try{const r=await window.__hc.request();if(r&&(r.canWriteWorkouts||r.canReadWeight)){S.hc="on";store("ddt-settings",S);const t=WEIGH.find(x=>x.day===dayKey());if(t&&t.src!=="hc")hcWeight(t);await hcSyncWeights()}}catch(e){}
+  hcPaint();
+}
+async function hcSyncWeights(){
+  if(!window.__hc||S.hc!=="on")return;
+  let res;try{res=await window.__hc.readWeights({since:Date.now()-120*864e5})}catch(e){return}
+  const byDay={};(res.weights||[]).forEach(w=>{const d=dayKey(w.time);if(!byDay[d]||byDay[d].time<w.time)byDay[d]=w});
+  let changed=false;
+  Object.entries(byDay).forEach(([d,w])=>{const lb=Math.round(w.kg*2.20462*10)/10,ex=WEIGH.find(x=>x.day===d);
+    if(!ex||((ex.at||0)<w.time&&Math.abs(ex.lb-lb)>0.05)){const e={day:d,lb,at:w.time,src:"hc"};WEIGH=WEIGH.filter(x=>x.day!==d).concat(e);put("weighins/"+d,e);changed=true}});
+  if(changed){WEIGH.sort((a,b)=>a.day<b.day?-1:1);store("ddt-weigh",WEIGH);if(VIEW==="home"){const open=$("#body")&&$("#body").open;home();if(open&&$("#body"))$("#body").open=true}}
+}
+function hcWeight(e){if(window.__hc&&S.hc==="on")window.__hc.saveWeight({time:e.at,kg:e.lb*0.45359}).catch(()=>{})}
 /* ---------- First-run intro: who you are, so calorie numbers fit you ---------- */
 function intro(){
   stopAll();VIEW="intro";window.scrollTo(0,0);
@@ -486,7 +513,7 @@ function intro(){
     <p class="muted" style="margin:0">I'm your follow-along coach for Shaun T's 12-week program: I time every set, call out each move during your rest, and log your weights and reps. Tell me a bit about you so the calorie and progress numbers fit your body.</p>
     <div class="card pad"><div class="pgrid">
       <label for="iname" style="grid-column:1/-1">First name<input class="bin" id="iname" type="text" autocomplete="given-name" value="${esc(S.name||"")}" placeholder="What should I call you?"></label>
-      <label for="isex">Sex<select class="bin" id="isex"><option value="m" ${BODY.sex!=="f"?"selected":""}>Male</option><option value="f" ${BODY.sex==="f"?"selected":""}>Female</option></select></label>
+      <label for="isex">Gender<select class="bin" id="isex"><option value="m" ${BODY.sex!=="f"?"selected":""}>Male</option><option value="f" ${BODY.sex==="f"?"selected":""}>Female</option></select></label>
       <label for="iage">Age<input class="bin" id="iage" type="number" inputmode="numeric" min="13" max="99" value="${BODY.age}"></label>
       <label for="ift">Height, feet<input class="bin" id="ift" type="number" inputmode="numeric" min="4" max="7" value="${ft}"></label>
       <label for="iin">Height, inches<input class="bin" id="iin" type="number" inputmode="numeric" min="0" max="11" value="${inch}"></label>
@@ -494,6 +521,7 @@ function intro(){
       <label for="igoal">Goal weight, lb<input class="bin" id="igoal" type="number" inputmode="decimal" step="0.1" value="${BODY.goal}"></label>
       <label for="iprot" style="grid-column:1/-1">Daily protein goal, g<input class="bin" id="iprot" type="number" inputmode="numeric" value="${BODY.protein}"></label>
     </div><p class="note" id="iest" style="margin:4px 0 0"></p></div>
+    ${window.__hc?`<label class="card pad" style="display:flex;gap:12px;align-items:center;cursor:pointer"><input type="checkbox" id="ihc" checked style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0"><span><b style="display:block">Sync with Health Connect</b><span class="note" style="margin:0">Send workouts and calories, and pull in your weight from a scale or other apps.</span></span></label>`:""}
     <button class="big" id="igo">Let's dig deeper</button>
     <button class="link" id="iskip" style="align-self:center">Skip for now</button>
     <p class="note" style="margin:0;text-align:center">Saved on this phone only. Change any of it later under Body stats.</p></div>`;
@@ -512,7 +540,8 @@ function intro(){
     store("ddt-body",BODY);put("body/profile",BODY);
     const v=n("#iwt");if(v>60&&v<500){const e={day:dayKey(),lb:Math.round(v*10)/10,at:Date.now()};WEIGH=WEIGH.filter(x=>x.day!==e.day).concat(e).sort((a,b)=>a.day<b.day?-1:1);store("ddt-weigh",WEIGH);put("weighins/"+e.day,e)}
     store("ddt-onboarded",true);
-    home();say(`Welcome${name?", "+name:""}. Let's dig deeper.`,true);
+    const wantHC=window.__hc&&$("#ihc")&&$("#ihc").checked;
+    home();say(`Welcome${name?", "+name:""}. Let's dig deeper.`,true);if(wantHC)hcConnect();
   };
   $("#iskip").onclick=()=>{store("ddt-onboarded",true);home()};
 }
@@ -586,7 +615,7 @@ function home(){
   const nr=$("#newround");if(nr)nr.onclick=()=>{const n=Math.max(...Object.values(ROUNDS).map(r=>r.n||1))+1;
     $("#nrbox").innerHTML=`<p class="note" style="margin:0">This starts the tracker over at Week 1 as Round ${n}. Everything from ${esc(ROUNDS[CUR].label)} stays saved, and your last weights carry over.</p><div style="display:flex;gap:8px"><button class="sm pri" id="nrok" style="flex:1">Start Round ${n}</button><button class="sm sec" id="nrno" style="flex:1">Cancel</button></div>`;
     $("#nrok").onclick=()=>{newRound();home();window.scrollTo(0,0)};$("#nrno").onclick=()=>{home();$("#rounds").open=true}};
-  bindBody();
+  bindBody();hcPaint();if(!HCSYNCED){HCSYNCED=true;hcSyncWeights()}
   VIEW="home";paintStatus();bindFS();
 }
 /* ---------- Body stats ---------- */
@@ -646,19 +675,19 @@ function bodyCard(){
     <details id="bprof"><summary style="font-family:var(--f-body);font-size:.9rem;padding:4px 0 12px">Your details</summary>
     <div class="pgrid">
       <label for="bage">Age<input class="bin" id="bage" type="number" inputmode="numeric" value="${BODY.age}"></label>
-      <label for="bsex">Sex<select class="bin" id="bsex"><option value="m" ${BODY.sex!=="f"?"selected":""}>Male</option><option value="f" ${BODY.sex==="f"?"selected":""}>Female</option></select></label>
+      <label for="bsex">Gender<select class="bin" id="bsex"><option value="m" ${BODY.sex!=="f"?"selected":""}>Male</option><option value="f" ${BODY.sex==="f"?"selected":""}>Female</option></select></label>
       <label for="bft">Height, feet<input class="bin" id="bft" type="number" inputmode="numeric" value="${ft}"></label>
       <label for="bin">Height, inches<input class="bin" id="bin" type="number" inputmode="numeric" value="${inch}"></label>
       <label for="bgoal">Goal weight, lb<input class="bin" id="bgoal" type="number" inputmode="decimal" value="${BODY.goal}"></label>
       <label for="bprot">Protein goal, g<input class="bin" id="bprot" type="number" inputmode="numeric" value="${BODY.protein}"></label>
     </div><button class="sm sec" id="bpsave" style="width:100%;margin-bottom:14px">Save details</button></details>
-    <p class="note" style="margin:0 0 14px">Calorie numbers are estimates (Mifflin-St Jeor), not a measurement.</p></details>`;
+    <p class="note" style="margin:0 0 14px">Calorie numbers are estimates (Mifflin-St Jeor), not a measurement.</p>${window.__hc?`<div id="hcrow" style="padding:0 0 16px"></div>`:""}</details>`;
   return h;
 }
 function bindBody(){
   const ws=$("#wsave");if(ws)ws.onclick=()=>{const v=+$("#wt").value;if(!(v>60&&v<500))return;
     const e={day:dayKey(),lb:Math.round(v*10)/10,at:Date.now()};WEIGH=WEIGH.filter(x=>x.day!==e.day).concat(e).sort((a,b)=>a.day<b.day?-1:1);
-    store("ddt-weigh",WEIGH);put("weighins/"+e.day,e);home();const d=$("#body");if(d)d.open=true};
+    store("ddt-weigh",WEIGH);put("weighins/"+e.day,e);hcWeight(e);home();const d=$("#body");if(d)d.open=true};
   const ps=$("#bpsave");if(ps)ps.onclick=()=>{const n=id=>+$(id).value;
     BODY={...BODY,age:n("#bage")||BODY.age,sex:$("#bsex").value,hin:(n("#bft")*12+n("#bin"))||BODY.hin,goal:n("#bgoal")||BODY.goal,protein:n("#bprot")||BODY.protein};
     store("ddt-body",BODY);put("body/profile",BODY);home();const d=$("#body");if(d)d.open=true};
@@ -935,12 +964,13 @@ function finish(){
   if(P.week){TR[P.week+"-"+P.d]=now;saveRound()}
   VIEW="summary";
   store("ddt-resume",null);
+  if(window.__hc&&S.hc==="on"&&P.ms>60000)window.__hc.saveWorkout({start:Math.round(now-P.ms),end:now,title:"DIG DEEPER · "+P.w,kcal:kcal||0}).then(()=>{const m=$("#hcmsg");if(m)m.textContent="Saved to Health Connect."},()=>{const m=$("#hcmsg");if(m)m.textContent="Couldn't save to Health Connect."});
   say(`Workout complete${S.name?", "+S.name:""}. ${sets} sets in ${Math.round(P.ms/60000)} minutes${kcal?", about "+kcal+" calories":""}. Nice work.`);
   window.scrollTo(0,0);
   $("#app").innerHTML=`<div class="narrow"><div class="hello"><span>${P.week?"Week "+P.week+" · ":""}${DAYNAME[P.d]}</span><h1>${esc(P.w)}: done.</h1></div>
     <div class="stats"><div class="card stat"><b>${clock(P.ms)}</b><span>Time</span></div><div class="card stat"><b>${sets}</b><span>Sets</span></div><div class="card stat"><b>${vol?vol.toLocaleString():"–"}</b><span>Pounds lifted</span></div></div>
     ${kcal?`<div class="card pad" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span><b style="font-family:var(--f-display);font-size:1.6rem">~${kcal.toLocaleString()}</b> <span class="muted">calories burned</span></span><span class="note" style="text-align:right">Estimate from your weight and workout time</span></div>`:`<p class="note" style="margin:0">Add your weight under Body stats to see calories burned.</p>`}
-    <p class="note" style="margin:0">Pounds lifted is dumbbell weight × reps for each set you logged.</p>
+    <p class="note" style="margin:0">Pounds lifted is dumbbell weight × reps for each set you logged. <span id="hcmsg"></span></p>
     ${ups.length?`<div class="card pad"><div class="sect" style="margin:0 0 6px">Go up next time</div><div class="list">${ups.map(u=>`<div class="li"><span>${esc(u.ex)}</span><span class="up">${u.w} → ${u.n} lb</span></div>`).join("")}</div></div>`:""}
     ${lines.length?`<div class="card pad"><div class="sect" style="margin:0 0 6px">What you did</div><div class="list">${lines.map(l=>`<div class="li"><span>${esc(l.ex)}<small>${l.reps.length?"Reps: "+l.reps.join(", "):l.n+" set"+(l.n>1?"s":"")}${l.hit?"":" · short of target"}</small></span><span class="num">${l.w?(l.prev&&l.prev!==l.w?l.prev+" → ":"")+l.w+" lb":weighted(l.ex)?"No weight":l.reps.length?"Body":"Timed"}</span></div>`).join("")}</div></div>`:""}
     <button class="big" id="back">Back to home</button></div>`;

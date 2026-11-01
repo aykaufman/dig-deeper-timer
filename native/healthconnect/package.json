@@ -1,0 +1,9 @@
+{
+  "name": "dig-deeper-healthconnect",
+  "version": "1.0.0",
+  "description": "Health Connect bridge for the DIG DEEPER Timer app: writes workouts and weight, reads weight.",
+  "main": "index.js",
+  "files": ["index.js", "android/"],
+  "capacitor": { "android": { "src": "android" } },
+  "peerDependencies": { "@capacitor/core": "^6.0.0" }
+}

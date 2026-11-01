@@ -1,0 +1,27 @@
+buildscript {
+    repositories { google(); mavenCentral() }
+    dependencies { classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24' }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace "com.aykaufman.healthconnect"
+    compileSdk 34
+    defaultConfig { minSdk 26 }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = "17" }
+    lint { abortOnError false }
+}
+
+repositories { google(); mavenCentral() }
+
+dependencies {
+    implementation project(':capacitor-android')
+    implementation 'androidx.health.connect:connect-client:1.1.0-alpha07'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+}
