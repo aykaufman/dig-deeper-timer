@@ -22,7 +22,8 @@ The two keep separate logs.
 ## Android app
 
 Every push to `main` builds a real Android app (`.apk`) with GitHub Actions and publishes it under **Releases**.
-It runs on Android's built-in WebView, so it works even with Chrome disabled, and all photos are inside the app (works offline).
+It runs on Android's built-in WebView, so it works even with Chrome disabled. The app is small: on first launch it downloads the photos once
+and keeps them on the phone, so it works offline after that and updates stay around a few MB. A banner on the home screen offers new versions.
 
 Latest download: https://github.com/aykaufman/dig-deeper-timer/releases/latest/download/dig-deeper-timer.apk
 
