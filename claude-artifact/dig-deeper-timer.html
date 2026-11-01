@@ -1,0 +1,907 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>DIG DEEPER Timer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: Ember Coach. One phone-width column of soft rounded cards; home → player → summary swap in place. */
+:root{
+  --bg:#F5F1EA; --card:#FFFFFF; --ink:#1A1714; --muted:#6A6158; --line:#E5DED3;
+  --accent:#FF6A2B; --accent-ink:#1F0E04; --accent-soft:#FFE6D8; --accent-text:#B93D0A;
+  --hero:#1A1714; --hero-ink:#FFFFFF;
+  --good:#0F5C46; --good-soft:#DCF1E8; --warm:#7A5300; --warm-soft:#FFF1D6;
+  --shadow:0 10px 30px rgba(22,32,42,.07);
+  --f-display:"Lexend","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12100E; --card:#1F1B17; --ink:#F7F3EE; --muted:#AEA498; --line:#38312B;
+  --accent:#FF7A3D; --accent-ink:#1F0E04; --accent-soft:#3D2316; --accent-text:#FFA070;
+  --hero:#2A231D; --hero-ink:#FFFFFF;
+  --good:#6BE8B6; --good-soft:#12372B; --warm:#F2B24C; --warm-soft:#3A2D14; --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12100E; --card:#1F1B17; --ink:#F7F3EE; --muted:#AEA498; --line:#38312B;
+  --accent:#FF7A3D; --accent-ink:#1F0E04; --accent-soft:#3D2316; --accent-text:#FFA070;
+  --hero:#2A231D; --hero-ink:#FFFFFF;
+  --good:#6BE8B6; --good-soft:#12372B; --warm:#F2B24C; --warm-soft:#3A2D14; --shadow:none; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.cols{display:flex;flex-direction:column;gap:18px}
+.colA,.colB{display:flex;flex-direction:column;gap:18px;min-width:0}
+.narrow{display:flex;flex-direction:column;gap:18px;width:100%;max-width:620px;margin:0 auto}
+@media (min-width:900px){.wrap{max-width:1160px!important;padding-block:32px 48px}.cols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:24px;align-items:start}.colA,.colB{gap:20px}.hello h1{font-size:2.3rem}.move h1{font-size:2.1rem}.top{max-width:none}.cols .nextcard{grid-template-columns:1fr;padding:14px}.cols .nextcard h2{font-size:1.6rem}.colB>.note{font-size:.95rem}}
+.wrap{max-width:520px;margin:0 auto;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));padding-block:22px 40px;display:flex;flex-direction:column;gap:18px}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;font-family:var(--f-display);text-wrap:balance}
+.muted{color:var(--muted)}
+.card{background:var(--card);border-radius:26px;box-shadow:var(--shadow)}
+.pad{padding:18px}
+.kick{font-size:.8rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+
+/* home */
+.hello span{font-size:.95rem;color:var(--muted)}
+.hello h1{font-weight:700;font-size:1.9rem;line-height:1.12;margin-top:2px}
+.prog{display:flex;gap:18px;align-items:center}
+.ring{position:relative;flex-shrink:0}
+.ring svg{display:block;transform:rotate(-90deg)}
+.ring circle{fill:none}
+.ring .trk{stroke:var(--accent-soft)}
+.ring .val{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .3s linear}
+.ring.rest .val{stroke:var(--good)}
+.ring.rest .trk{stroke:var(--good-soft)}
+.ring .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.prog .mid b{font-family:var(--f-display);font-size:1.45rem;line-height:1}
+.prog .mid span{font-size:.72rem;color:var(--muted)}
+.prog h2{font-weight:600;font-size:1.15rem}
+.prog p{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.today{background:var(--hero);color:var(--hero-ink);border-radius:28px;padding:22px;display:flex;flex-direction:column;gap:12px}
+.today .kick{color:var(--accent)}
+.today h2{font-weight:700;font-size:2rem;line-height:1.05}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:color-mix(in srgb,var(--hero-ink) 14%,transparent);border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:600}
+.today .go{margin-top:4px;height:58px;border:0;border-radius:18px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-weight:600;font-size:1.15rem}
+.week{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.wd{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
+.wd i{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:700;font-size:.95rem;background:var(--card);border:1px solid var(--line);color:var(--ink)}
+.wd.on i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.wd.now i{border:2px solid var(--accent)}
+.tip{display:flex;gap:12px;align-items:center;padding:14px 16px}
+.tip .ic{width:40px;height:40px;border-radius:12px;background:var(--warm-soft);color:var(--warm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tip .ic.ok{background:var(--good-soft);color:var(--good)}
+.tip b{display:block;font-size:.98rem}
+.tip span{font-size:.86rem;color:var(--muted)}
+.tip>div:nth-child(2){min-width:0;flex:1}
+.resume .btns{display:flex;gap:8px;flex-shrink:0}
+.sm{height:44px;padding:0 16px;border-radius:14px;border:0;font-weight:700;font-size:.92rem}
+.sm.pri{background:var(--accent);color:var(--accent-ink)}
+.sm.sec{background:var(--bg);color:var(--ink)}
+.sect{font-family:var(--f-display);font-weight:600;font-size:1.1rem;margin-top:6px}
+details.card{padding:4px 18px}
+details summary{cursor:pointer;padding:14px 0;font-family:var(--f-display);font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";font-size:1.3rem;color:var(--muted)}
+details[open] summary::after{content:"–"}
+.grid{display:grid;grid-template-columns:3.2rem repeat(6,minmax(0,1fr));gap:5px;padding-bottom:16px;font-variant-numeric:tabular-nums}
+.grid .gh{text-align:center;font-weight:700;color:var(--muted);font-size:.8rem}
+.grid .wk{color:var(--muted);font-size:.78rem;font-weight:600;align-self:center;white-space:nowrap}
+.cell{height:28px;border-radius:8px;border:1px solid var(--line);background:var(--bg);padding:0}
+.cell.on{background:var(--accent);border-color:var(--accent)}
+.cell.nx{outline:2px solid var(--accent);outline-offset:1px}
+.list{display:flex;flex-direction:column;padding-bottom:10px}
+.li{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);padding:11px 0;font-size:.92rem}
+.li>span:first-child{min-width:0;display:flex;flex-direction:column}
+.li small{color:var(--muted);font-size:.8rem}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--line);padding:4px;border-radius:16px}
+.seg button{border:0;background:transparent;border-radius:12px;padding:9px 4px;font-weight:700;font-size:.9rem;color:var(--muted)}
+.seg button small{display:block;font-weight:500;font-size:.72rem}
+.seg button[aria-selected="true"]{background:var(--card);color:var(--ink)}
+.days{display:flex;flex-direction:column;gap:10px}
+.day{display:grid;grid-template-columns:3rem 1fr auto;align-items:center;gap:12px;text-align:left;background:var(--card);border:0;border-radius:20px;padding:14px 16px;box-shadow:var(--shadow)}
+.day .dw{font-weight:700;color:var(--accent-text);font-size:.9rem}
+.day b{display:block;font-weight:600}
+.day small{color:var(--muted)}
+.day .num{font-size:.9rem}
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.set-row label small{display:block;font-size:.8rem;color:var(--muted)}
+select{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:7px 9px}
+.note{font-size:.8rem;color:var(--muted)}
+.status{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:.82rem;font-weight:600;color:var(--good)}
+.status:empty{display:none}
+.status.warn{color:var(--muted)}
+
+/* player */
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.close{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);flex-shrink:0}
+.dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;min-width:0}
+.dots i{width:12px;height:6px;border-radius:3px;background:var(--line)}
+.dots i.d{background:var(--accent)}
+.dots i.c{background:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.clock{font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.move{overflow:hidden}
+.shot{aspect-ratio:3/2;max-width:100%;background:var(--bg);cursor:zoom-in;position:relative}
+.shot img+.zoom{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;font-size:.75rem;font-weight:700;padding:4px 10px;pointer-events:none}
+.fsapp{margin-left:8px}
+.top .clock{margin-left:auto}
+.fshome{margin-top:10px;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border:0;border-radius:999px;background:var(--card);color:var(--ink);font-weight:700;font-size:.88rem;box-shadow:var(--shadow);align-self:flex-start}
+.hello{display:flex;flex-direction:column}
+.half{display:none}
+/* full screen mode */
+body.fsmode .wrap{max-width:none!important;padding-block:10px 20px;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+body.fsmode .move .body{padding:10px 14px 12px}
+body.fsmode .move h1{font-size:1.5rem}
+/* portrait: START above FINISH, each panel large */
+@media (orientation:portrait){
+  body.fsmode .shot{aspect-ratio:auto;display:flex;flex-direction:column;gap:6px;background:transparent;padding:6px 0}
+  body.fsmode .shot img{display:none}
+  body.fsmode .shot .half{display:block;width:100%;max-width:min(100%,calc(36vh*.75));aspect-ratio:.75;margin:0 auto;background-size:200% 100%;background-position:0 50%;background-repeat:no-repeat;border-radius:12px}
+  body.fsmode .shot .half.r{background-position:100% 50%}
+  body.fsmode .cols .move.card,body.fsmode .cols.rest .nextcard{margin-inline:-10px}
+  body.fsmode .cols.rest .ring{width:120px!important;height:120px!important}
+  body.fsmode .cols.rest .ring svg{width:120px;height:120px}
+}
+/* landscape: photo fills the left, controls on the right */
+@media (orientation:landscape){
+  body.fsmode .cols,body.fsmode .cols.rest{display:grid!important;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:14px;align-items:start}
+  body.fsmode .cols.rest .colA,body.fsmode .cols.rest .colB{display:flex!important}
+  body.fsmode .cols .colA{position:sticky;top:8px}
+  body.fsmode .cols .move.card,body.fsmode .cols.rest .nextcard{margin-inline:0;border-radius:18px}
+  body.fsmode .move .shot{aspect-ratio:3/2;height:auto;max-height:calc(100vh - 96px);min-height:200px}
+  body.fsmode .move .body{padding:6px 12px 8px;flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap}
+  body.fsmode .move h1{font-size:1.15rem}
+  body.fsmode .move .body p{display:none}
+  body.fsmode .move .shot img{object-fit:contain}
+  body.fsmode .cols.rest{grid-template-columns:minmax(280px,1fr) minmax(0,1.7fr)}
+  body.fsmode .cols.rest .nextcard .shot{aspect-ratio:3/2;height:auto;max-height:calc(100vh - 140px);min-height:180px}
+  body.fsmode .cols.rest .ring{width:140px!important;height:140px!important}
+  body.fsmode .cols.rest .ring svg{width:140px;height:140px}
+  body.fsmode .top{margin-bottom:-6px}
+}
+.fsbtn{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:6px;border:0;border-radius:999px;background:rgba(10,14,20,.72);color:#fff;font-weight:700;font-size:.85rem;padding:9px 14px;min-height:40px}
+.pm{position:fixed;inset:0;z-index:60;background:#12100E;color:#fff;display:flex;flex-direction:column;padding:max(10px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:8px}
+.pmtop{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.pmname{display:flex;flex-direction:column;min-width:0}
+.pmname span{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#FFA070}
+.pm.resting .pmname span{color:#7FE0BC}
+.pmname b{font-family:var(--f-display);font-size:clamp(1.1rem,4.5vw,1.8rem);line-height:1.1}
+.pmnum{text-align:right;flex-shrink:0}
+.pmnum b{display:block;font-family:var(--f-display);font-size:clamp(1.8rem,7vw,3rem);line-height:1;font-variant-numeric:tabular-nums}
+.pmnum span{font-size:.8rem;color:#C9C0B5}
+.pmimg{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.pmimg img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+.pmhalf{display:none}
+@media (orientation:portrait){.pmimg{flex-direction:column;gap:8px}.pmimg img{display:none}.pmhalf{display:block;flex:1;min-height:0;width:100%;max-width:calc((100vh - 200px)/2*.75);aspect-ratio:.75;margin:0 auto;background-size:200% 100%;background-position:0 50%;background-repeat:no-repeat;border-radius:10px}.pmhalf.r{background-position:100% 50%}}
+.pmbar{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.pmb{height:54px;border:0;border-radius:16px;background:#FF6A2B;color:#1F0E04;font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.pm.resting .pmb:not(.sec){background:#6BE8B6;color:#052A1F}
+.pmb.sec{background:#2A241F;color:#fff}
+@media (orientation:landscape) and (max-height:500px){.pmbar{grid-template-columns:auto auto;justify-content:end}.pmb{height:44px;padding:0 18px}}
+@media (max-width:899px){.cols .move.card,.cols.rest .nextcard{margin-inline:calc(-1*max(18px,env(safe-area-inset-left,0px)));border-radius:0}.cols .move.card .shot{aspect-ratio:auto}}
+.lb{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));cursor:zoom-out}
+.lb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.lb b{position:absolute;top:max(14px,env(safe-area-inset-top,0px));left:0;right:0;text-align:center;color:#fff;font-family:var(--f-display);font-size:1.1rem}
+@media (max-width:899px){.move.card{margin-inline:-10px;border-radius:22px}.cols.rest .colA,.cols.rest .colB{display:contents}.cols.rest .timer{order:1;padding:16px 18px}.cols.rest .nextcard{order:2;margin-inline:-10px}.cols.rest .edit{order:3}.cols.rest>.colB>.note,.cols.rest .note.setup{order:4}.cols.rest .ring{width:150px!important;height:150px!important}.cols.rest .ring svg{width:150px;height:150px}.cols.rest .timer .mid b{font-size:2.8rem}}
+.shot img{width:100%;height:100%;object-fit:contain;display:block}
+.move .body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:6px}
+.tag{align-self:flex-start;font-size:.82rem;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:5px 11px;border-radius:999px}
+.tag.rest{color:var(--good);background:var(--good-soft)}
+.move h1{font-weight:700;font-size:1.75rem;line-height:1.1}
+.move p{margin:0;color:var(--muted);font-size:.93rem}
+.target{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.target b{font-family:var(--f-display);font-size:1.05rem}
+.up{color:var(--good);font-weight:700}
+.pick{display:flex;flex-direction:column;gap:8px}
+.pick .lab{display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;color:var(--muted)}
+.wrap>*,.pick,.pick>*{min-width:0;max-width:100%}
+.chips{display:flex;gap:6px}
+.chips.grid8{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+.chips.scroll{overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;scrollbar-width:none}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chip{flex:1;min-width:0;height:48px;padding:0;border-radius:14px;border:1px solid var(--line);background:var(--card);font-family:var(--f-display);font-weight:600;font-size:1rem;font-variant-numeric:tabular-nums}
+.chips.scroll .chip{flex:0 0 48px;scroll-snap-align:start}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.short[aria-pressed="true"]{background:var(--warm);border-color:var(--warm);color:var(--card)}
+.plan{padding:6px 18px 10px}
+.plan .li b{font-weight:600}
+.big{height:64px;border:0;border-radius:22px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-weight:600;font-size:1.2rem;width:100%}
+.big.rest{background:var(--good);color:var(--bg)}
+.row3{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.link{height:44px;border:0;background:transparent;color:var(--muted);font-weight:700;padding:0 6px}
+.nextline{font-size:.9rem;color:var(--muted);text-align:right;min-width:0}
+.nextline b{color:var(--ink)}
+.timer{display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 18px}
+.timer .mid b{font-family:var(--f-display);font-weight:700;font-size:3.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.timer .mid span{font-size:.85rem;color:var(--muted)}
+.logged{display:flex;gap:10px;align-items:center;background:var(--good-soft);color:var(--ink);border-radius:16px;padding:10px 14px;font-size:.9rem}
+.logged b{color:var(--good)}
+.edit{display:flex;flex-direction:column;gap:6px}
+.fixsum{padding:4px 2px 0!important;font-family:var(--f-body)!important;font-size:.9rem;font-weight:700!important;color:var(--accent-text)}
+.fixsum::after{content:"" !important}
+.nextcard{display:grid;grid-template-columns:1fr;gap:12px;padding:12px;align-items:center}
+.nextcard .shot{border-radius:16px;overflow:hidden}
+.nextcard h2{font-size:1.35rem!important}
+.nextcard .shot{border-radius:16px;overflow:hidden}
+.nextcard h2{font-weight:700;font-size:1.2rem;line-height:1.15}
+.nextcard p{margin:4px 0 0;font-size:.85rem;color:var(--muted)}
+.nextcard .grab{margin-top:6px;font-weight:700;font-size:.92rem}
+.nextcard>div:last-child{min-width:0}
+
+/* summary */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{padding:14px 8px;text-align:center}
+.stat b{display:block;font-family:var(--f-display);font-weight:700;font-size:1.6rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.78rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.ring .val{transition:none}}
+/* last-time markers on the set screen */
+.chip{position:relative}
+.chip.was::after{content:"";position:absolute;left:50%;bottom:5px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:currentColor;opacity:.6}
+.wasline{font-size:.86rem;color:var(--muted);margin-top:-2px}
+.wasline b{color:var(--ink)}
+/* body stats */
+.bgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-bottom:12px}
+.bst{background:var(--bg);border-radius:16px;padding:10px 12px;min-width:0}
+.bst b{display:block;font-family:var(--f-display);font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+.bst span{font-size:.78rem;color:var(--muted)}
+.bst small{display:block;font-size:.78rem;color:var(--muted);margin-top:2px}
+.bst.hi b{color:var(--accent-text)}
+.spark{display:block;width:100%;height:56px;margin:0 0 12px}
+.spark .ln{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.spark .gl{stroke:var(--good);stroke-width:1.5;stroke-dasharray:4 4}
+.wrow{display:flex;gap:8px;align-items:flex-end;padding-bottom:12px;flex-wrap:wrap}
+.wrow label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;font-weight:600;color:var(--muted);flex:1;min-width:120px}
+.bin{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px;font:inherit;font-size:1.05rem;color:var(--ink);width:100%;box-sizing:border-box}
+.bin:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.pgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-bottom:10px}
+.pgrid label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--muted)}
+/* coach */
+.coach{display:flex;flex-direction:column;gap:10px}
+.coachtxt{margin:0;white-space:pre-line;font-size:.95rem;line-height:1.5}
+.coach .sm{align-self:flex-start}
+.coach .sm:disabled{opacity:.6}
+/* keep the photo on the same side during work and rest */
+@media (min-width:900px){.cols.rest>.colB{order:-1}}
+@media (orientation:landscape){body.fsmode .cols.rest{grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr)}body.fsmode .cols.rest>.colB{order:-1;position:sticky;top:8px}body.fsmode .cols.rest>.colA{position:static}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+const DATA=[["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Incline Chest Press",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Underhand Row",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Overhead Tricep Extension",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Knee Raise",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Hammer Curl",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Shoulder Press",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","A","Seated Switch Kicks",3,"",45,"Core"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","B","Incline Pushup",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","B","J Row",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","B","Tricep Dip",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","B","Bicep Curl with Leg Extension",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","B","Lateral Raise",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Mon","Upper Body Circuit 1","B","Iron Cross Abs",3,"",45,"Core"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","A","Sumo Squat Calf Raise",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","A","Bench Step Up",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","A","Glute Pull",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","A","Goblet Squat Knee Drive",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","A","Heel Digs",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","B","Revolving Lunge",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","B","Hanging Squat",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","B","Corner Lunge Knee Drive",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","B","Small Range Deadlift",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Tue","Lower Body Circuit 1","B","Lunge Wood Chop Heel Lift",3,"20/16/12",0,"Giant set"],["C1 Dynamic Circuits","Wed","Total Body Circuit","A","Decline Pushup",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","A","Bench Squat Tap",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","A","Straight Leg Lift",3,"",45,"Core"],["C1 Dynamic Circuits","Wed","Total Body Circuit","B","Underhand Bent-Over Row",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","B","Reverse Lunge",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","B","Oblique Knee-to-Elbow Tap",3,"",45,"Core"],["C1 Dynamic Circuits","Wed","Total Body Circuit","C","Kneeling Tricep Kickback",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","C","Step Up Sumo Squat",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","C","Seated Knee Tuck",3,"",45,"Core"],["C1 Dynamic Circuits","Wed","Total Body Circuit","D","Seated Dual Hammer Curl",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","D","In-and-Out Pop Squat (bench)",3,"16",0,"Circuit"],["C1 Dynamic Circuits","Wed","Total Body Circuit","D","Bent Knee Drive",3,"",45,"Core"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","A","Chest Fly to Hex Press",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","A","Single-Arm Row",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","A","Tricep Pushup on Bench to Downward Dog",3,"",45,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","A","Twisting Curl",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","A","Front Raise",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","A","Low Plank Knee Drive on Bench",3,"",45,"Core"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","B","Twisting Chest Press",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","B","J Row",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","B","Underhand Tricep Kickback",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","B","W Curl",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","B","Upright Row",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Thu","Upper Body Circuit 2","B","Bicycle Double Tap",3,"",45,"Core"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","A","Bulgarian Split Squat",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","A","Corner Lunge Knee Drive",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","A","Glute Goblet Squat",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","A","Hip Thrust Opener",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","A","1.5 Squat",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","B","Loaded Reverse Lunge DB Pass",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","B","Adductor Squat Side Leg Lift",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","B","Wide Sumo to Narrow Squat Pulse",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","B","Good Morning",3,"12",0,"Giant set"],["C1 Dynamic Circuits","Fri","Lower Body Circuit 2","B","Glute Step Up Heel Digs on Bench",3,"12/12/24 each side",0,"Last set doubled"],["C1 Dynamic Circuits","Sat","Steady State Cardio 1","","Steady State Cardio 1",1,"",1500,"Optional; low impact"],["C2 Sculpt & Define","Mon","Total Body","A","Incline Chest Press",3,"12",0,"3-sec lowering"],["C2 Sculpt & Define","Mon","Total Body","A","Row",3,"12",0,"3-sec lowering"],["C2 Sculpt & Define","Mon","Total Body","A","90 Degree Ab Hold",3,"",45,"Core"],["C2 Sculpt & Define","Mon","Total Body","B","Good Morning",3,"12",0,"3-sec lowering"],["C2 Sculpt & Define","Mon","Total Body","B","Reverse Quad-Focus Lunge",3,"12",0,"Last set double reps"],["C2 Sculpt & Define","Mon","Total Body","B","Forearm Plank",3,"",45,"Core"],["C2 Sculpt & Define","Mon","Total Body","C","Hammer Curl",3,"12",0,"3-sec lowering"],["C2 Sculpt & Define","Mon","Total Body","C","Overhead Tricep Extension",3,"12",0,"3-sec lowering"],["C2 Sculpt & Define","Mon","Total Body","C","Weighted L Hold",3,"",45,"Core"],["C2 Sculpt & Define","Mon","Total Body","D","Incline Chest Press",3,"",45,"Burnout"],["C2 Sculpt & Define","Mon","Total Body","D","Reverse Lunge",3,"",45,"Burnout"],["C2 Sculpt & Define","Mon","Total Body","D","Hammer Curl",3,"",45,"Burnout"],["C2 Sculpt & Define","Tue","Chest & Back","A","Chest Press",3,"12",0,"Superset; 3-sec lowering"],["C2 Sculpt & Define","Tue","Chest & Back","A","Dumbbell Pullover",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","B","Chest Fly",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","B","Bent-Over Twisting Row",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","C","Hex Press",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","C","Close Grip Row",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","D","Incline Fly",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","D","Incline J Row",3,"12",0,"Superset"],["C2 Sculpt & Define","Tue","Chest & Back","E","Weighted Pushup Row",3,"",30,"Burnout; 20 sec rest"],["C2 Sculpt & Define","Wed","Legs","A","Narrow Hanging Squat",3,"12",0,"Superset; 3-sec lowering"],["C2 Sculpt & Define","Wed","Legs","A","1.5 Deadlift",3,"12",0,"Superset"],["C2 Sculpt & Define","Wed","Legs","B","Long Stride Isometric Lunge",3,"12",0,"Superset"],["C2 Sculpt & Define","Wed","Legs","B","Bench Tap Sumo Squat",3,"12",0,"Superset"],["C2 Sculpt & Define","Wed","Legs","C","Corner Lunge Squat",3,"12",0,"Superset"],["C2 Sculpt & Define","Wed","Legs","C","Quad Burner Calf Raise",3,"12",0,"Bodyweight"],["C2 Sculpt & Define","Wed","Legs","D","Squat Around the Bench",3,"",60,"Burnout; heavy/medium/none"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","A","Shoulder Press",3,"7/7/7",0,"Triple 7s (L/R/both)"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","A","Heel Dig on Bench",3,"12",0,""],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","A","Bench Knee Sprints",3,"",60,"Core"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","B","Lateral Raise",3,"7/7/7",0,"Triple 7s"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","B","Sumo Deadlift to Sumo Squat",3,"12",0,""],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","B","Full Body Crunch",3,"",60,"Core"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","C","Upright Row",3,"7/7/7",0,"Triple 7s"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","C","Reverse Lunge Leg Kickback",3,"12",0,""],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","C","Oblique Knee Drive",3,"",60,"Core"],["C2 Sculpt & Define","Thu","Shoulders, Glutes & Abs","D","10 and 2 Shoulder Raise Pyramid",1,"7-6-5-4-3-2-1 each side",0,"Burnout; go very light"],["C2 Sculpt & Define","Fri","Bis & Tris","A","M Curl",3,"12",0,"Superset; 3-sec lowering"],["C2 Sculpt & Define","Fri","Bis & Tris","A","Tricep Bench Dip with Leg Extension",3,"12",0,"Bodyweight"],["C2 Sculpt & Define","Fri","Bis & Tris","A","Iron Cross",1,"",60,"Core after last set"],["C2 Sculpt & Define","Fri","Bis & Tris","B","Reverse Curl",3,"12",0,"Superset"],["C2 Sculpt & Define","Fri","Bis & Tris","B","Tricep Press",3,"12",0,"Superset"],["C2 Sculpt & Define","Fri","Bis & Tris","B","Knee Tuck on Bench",1,"",60,"Core after last set"],["C2 Sculpt & Define","Fri","Bis & Tris","C","Concentration Curl",3,"12",0,"Superset"],["C2 Sculpt & Define","Fri","Bis & Tris","C","Tricep Pushup to Downward Dog",3,"12",0,"Superset"],["C2 Sculpt & Define","Fri","Bis & Tris","C","Seated Bicycles",1,"",60,"Core after last set"],["C2 Sculpt & Define","Fri","Bis & Tris","D","90 Degree Iso Curl External Rotation",1,"",30,"Burnout; alternate 3 min no rest"],["C2 Sculpt & Define","Fri","Bis & Tris","D","Tricep Kickback",1,"",30,"Burnout; alternate 3 min no rest"],["C2 Sculpt & Define","Sat","Steady State Cardio 2","","Steady State Cardio 2",1,"",1740,"Optional; low impact"],["C3 The Build","Mon","Chest","","Incline Chest Fly",5,"8",0,""],["C3 The Build","Mon","Chest","","Chest Press",5,"8",0,""],["C3 The Build","Mon","Chest","","Decline Pushup",5,"12/10/8/4/2",0,"15 sec rest between sets"],["C3 The Build","Mon","Chest","","Incline Chest Press",5,"8",0,""],["C3 The Build","Mon","Chest","","Chest Fly",5,"8",0,""],["C3 The Build","Mon","Chest","","Hex Press",5,"12/10/8/4/2",0,""],["C3 The Build","Mon","Chest","A","Standing Chest Fly",3,"8",0,"Burnout superset"],["C3 The Build","Mon","Chest","A","Slow Wide Incline Pushup",3,"8",0,"Burnout superset"],["C3 The Build","Tue","Back & Abs","A","Mid-Back Row",4,"6/8/10/12",0,""],["C3 The Build","Tue","Back & Abs","A","Seated Crunches",4,"",45,"Core"],["C3 The Build","Tue","Back & Abs","B","Twisting Hip Fly",4,"6/8/10/12",0,""],["C3 The Build","Tue","Back & Abs","B","Bicycle Toe Touches",4,"",45,"Core"],["C3 The Build","Tue","Back & Abs","C","Rear Delt Fly",4,"6/8/10/12",0,""],["C3 The Build","Tue","Back & Abs","C","Iron Cross Abs",4,"",45,"Core"],["C3 The Build","Tue","Back & Abs","D","J Row",4,"6/8/10/12",0,""],["C3 The Build","Tue","Back & Abs","D","Bench Flutter Kicks",4,"",45,"Core"],["C3 The Build","Tue","Back & Abs","E","Close Grip Row",3,"6",0,"Burnout; no rest"],["C3 The Build","Tue","Back & Abs","E","Iso Lat Plank on Bench",3,"",30,"Burnout"],["C3 The Build","Wed","Arms","","W Curl",4,"12/10/8/6",0,""],["C3 The Build","Wed","Arms","","Reverse Curl",4,"12/10/8/6",0,""],["C3 The Build","Wed","Arms","","21s Hammer Curl",4,"7/7/7",0,"Lower/upper/full range"],["C3 The Build","Wed","Arms","","Overhead Tricep Extension",4,"12/10/8/6",0,""],["C3 The Build","Wed","Arms","","Close Grip Tricep Press",4,"12/10/8/6",0,""],["C3 The Build","Wed","Arms","","21s Tricep Kickback",4,"7/7/7",0,"Palm up/down/in"],["C3 The Build","Wed","Arms","A","Reciprocating Hammer Curl",3,"12",0,"Burnout circuit"],["C3 The Build","Wed","Arms","A","Tricep Dips on Bench",3,"12",0,"Burnout circuit"],["C3 The Build","Wed","Arms","A","Reciprocating Neutral Curl",3,"12",0,"Burnout circuit"],["C3 The Build","Wed","Arms","A","Tricep Pushup on Bench",3,"12",0,"Burnout; last set slow"],["C3 The Build","Thu","Legs","A","Side-to-Side Squat",4,"12/10/8/6",0,"Superset"],["C3 The Build","Thu","Legs","A","Reverse Lunge",4,"12/10/8/6",0,"Superset"],["C3 The Build","Thu","Legs","","Heavy Deadlift",4,"12",0,""],["C3 The Build","Thu","Legs","B","Bulgarian Split Squat",4,"12/10/8/6",0,"Superset"],["C3 The Build","Thu","Legs","B","Sumo Squat",4,"12/10/8/6",0,"3-count pace"],["C3 The Build","Thu","Legs","","Walking Lunge with Strongman Walk Back",4,"12",0,"4 long strides then walk back"],["C3 The Build","Thu","Legs","C","Side Step Up Adductor Squeeze",4,"12/10/8/6",0,"Superset"],["C3 The Build","Thu","Legs","C","Squat with Calf Raise",4,"12/10/8/6",0,"Superset"],["C3 The Build","Thu","Legs","D","Squat-Lunge-Squat-Stand",3,"",45,"Burnout; heavy/medium/none"],["C3 The Build","Fri","Shoulders & Abs","A","Shoulder Press",3,"10",0,""],["C3 The Build","Fri","Shoulders & Abs","A","Upright Row",3,"10",0,""],["C3 The Build","Fri","Shoulders & Abs","A","Seated Oblique Knee Twist",3,"",45,"Core"],["C3 The Build","Fri","Shoulders & Abs","B","Lateral Raise",3,"10",0,""],["C3 The Build","Fri","Shoulders & Abs","B","Front Raise",3,"10",0,""],["C3 The Build","Fri","Shoulders & Abs","B","Seated In-and-Outs",3,"",45,"Core"],["C3 The Build","Fri","Shoulders & Abs","C","Arnold Press",3,"10",0,""],["C3 The Build","Fri","Shoulders & Abs","C","Rear Delt Raise",3,"10",0,""],["C3 The Build","Fri","Shoulders & Abs","C","Seated Crunches",3,"",45,"Core"],["C3 The Build","Fri","Shoulders & Abs","D","Reverse-Grip Shoulder Press",3,"6/6/6",0,"Burnout (R/L/both)"],["C3 The Build","Fri","Shoulders & Abs","D","Steering Wheel",3,"",30,"Burnout"],["C3 The Build","Sat","Steady State Cardio 3","","Steady State Cardio 3",1,"",1920,"Optional; low impact"]];
+const SETUP={"Incline Chest Press":"Lying on a bench set to a 30-degree incline, feet flat on the floor, a dumbbell in each hand, palms facing forward.","Underhand Row":"Standing with feet hip-width, hinged forward at the hips about 45 degrees, flat back, soft knees, dumbbells held with palms facing forward.","Overhead Tricep Extension":"Seated upright on the end of a flat bench, feet flat, holding one dumbbell vertically with both hands cupped under the top plate.","Knee Raise":"Seated on the edge of a flat bench, hands gripping the bench beside his hips, torso leaning back slightly with a straight spine.","Hammer Curl":"Standing tall, feet hip-width, a dumbbell in each hand, palms facing each other.","Shoulder Press":"Seated on a bench with the back pad upright, feet flat, a dumbbell in each hand, palms facing forward.","Seated Switch Kicks":"Seated on a mat, leaning back on his hands placed behind his hips, both feet lifted off the floor, core braced.","Incline Pushup":"Hands on the edge of a flat bench slightly wider than his shoulders, body in one straight line from head to heels.","J Row":"Hinged forward at the hips with a flat back and soft knees, dumbbells held with palms facing each other.","Tricep Dip":"Hands gripping the edge of a flat bench behind him, fingers forward, knees bent 90 degrees, feet flat, hips just in front of the bench.","Bicep Curl with Leg Extension":"Seated upright on the edge of a flat bench, a dumbbell in each hand, palms facing forward.","Lateral Raise":"Standing tall with a slight forward lean, a dumbbell in each hand, soft bend in the elbows.","Iron Cross Abs":"Lying on his back on a mat, arms out to the sides in a T, palms down.","Sumo Squat Calf Raise":"Wide stance, toes turned out about 45 degrees, holding one dumbbell vertically between his legs with both hands.","Bench Step Up":"Facing a flat bench, a dumbbell in each hand at his sides.","Glute Pull":"Standing, feet hip-width, a dumbbell in each hand in front of his thighs.","Heel Digs":"Lying on his back on the floor, heels resting on top of a flat bench, knees bent about 90 degrees, arms at his sides.","Revolving Lunge":"A dumbbell in each hand at his sides, torso upright.","Hanging Squat":"Feet shoulder-width, a dumbbell in each hand hanging at his sides, palms facing in.","Corner Lunge Knee Drive":"A dumbbell in each hand at his sides.","Small Range Deadlift":"Standing, feet hip-width, a dumbbell in each hand in front of his thighs, palms facing him.","Lunge Wood Chop Heel Lift":"Holding one dumbbell with both hands.","Decline Pushup":"Feet on a flat bench, hands on the floor slightly wider than his shoulders, body in one straight line.","Bench Squat Tap":"Standing in front of a flat bench, holding one dumbbell vertically at his chest.","Straight Leg Lift":"Lying on his back on a mat, hands flat beside his hips, lower back pressed into the mat.","Underhand Bent-Over Row":"Hinged forward until his torso is about 45 degrees to the floor, flat back, soft knees, dumbbells held with palms facing forward.","Reverse Lunge":"A dumbbell in each hand at his sides.","Oblique Knee-to-Elbow Tap":"Lying on his back on a mat, fingertips behind his head.","Kneeling Tricep Kickback":"Left knee and left hand on a flat bench, back flat and parallel to the floor, dumbbell in his right hand.","Step Up Sumo Squat":"Standing beside a flat bench, holding one dumbbell vertically with both hands.","Seated Knee Tuck":"Seated on a mat, leaning back on his forearms or hands, feet lifted.","Seated Dual Hammer Curl":"Seated upright on the end of a flat bench, feet flat, palms facing each other.","In-and-Out Pop Squat (bench)":"Bodyweight only, standing in front of a flat bench, hands clasped at his chest.","Bent Knee Drive":"Lying on his back on a mat, arms at his sides, knees bent.","Chest Fly to Hex Press":"Lying on a flat bench, feet flat, a dumbbell in each hand.","Single-Arm Row":"Left knee and left hand on a flat bench, back flat, right foot on the floor, dumbbell in his right hand.","Tricep Pushup on Bench to Downward Dog":"Hands close together on the edge of a flat bench, elbows tucked.","Twisting Curl":"Standing tall, a dumbbell in each hand.","Front Raise":"Standing tall, a dumbbell in each hand.","Low Plank Knee Drive on Bench":"Forearms on a flat bench, body in a straight line, feet on the floor.","Twisting Chest Press":"Lying on a flat bench, feet flat.","Underhand Tricep Kickback":"Hinged forward with a flat back, upper arms parallel to his torso, palms facing forward.","W Curl":"Standing tall, elbows tucked at his sides.","Upright Row":"Standing tall, dumbbells in front of his thighs, palms facing his body.","Bicycle Double Tap":"Lying on his back on a mat, fingertips behind his head, shoulders lifted.","Bulgarian Split Squat":"Back foot laces-down on a flat bench behind him, a dumbbell in each hand at his sides.","Glute Goblet Squat":"Feet slightly wider than his shoulders, holding one dumbbell vertically at his chest.","Hip Thrust Opener":"Upper back against the side of a flat bench, feet flat, a dumbbell resting across his hips.","1.5 Squat":"Holding one dumbbell vertically at his chest.","Loaded Reverse Lunge DB Pass":"Holding one dumbbell in his right hand.","Adductor Squat Side Leg Lift":"Holding one dumbbell vertically at his chest.","Wide Sumo to Narrow Squat Pulse":"Holding one dumbbell vertically at his chest.","Good Morning":"Feet hip-width, holding one dumbbell against his chest with both hands.","Glute Step Up Heel Digs on Bench":"Lying on his back, right heel on top of a flat bench, left leg raised straight up.","Row":"Hinged forward with a flat back, palms facing each other.","90 Degree Ab Hold":"Lying on his back, hips and knees bent 90 degrees, shins parallel to the floor, shoulders lifted in a crunch, arms reaching toward his knees.","Reverse Quad-Focus Lunge":"A dumbbell in each hand at his sides.","Forearm Plank":"Forearms on a mat, elbows under his shoulders, body in a straight line from head to heels.","Weighted L Hold":"Seated on a mat, holding one dumbbell at his chest, torso leaning back slightly.","Chest Press":"Lying on a flat bench, feet flat on the floor, shoulder blades pinned back, a dumbbell in each hand with palms facing forward.","Dumbbell Pullover":"Lying lengthwise on a flat bench, feet flat, holding one dumbbell vertically with both hands cupped under the top plate.","Chest Fly":"Lying on a flat bench, feet flat, a dumbbell in each hand, palms facing each other.","Bent-Over Twisting Row":"Hinged forward at the hips about 45 degrees, flat back, soft knees.","Hex Press":"Lying on a flat bench, feet flat, two dumbbells squeezed together side by side, palms facing each other.","Close Grip Row":"Hinged forward at the hips about 45 degrees, flat back, soft knees, dumbbells held touching with palms facing each other.","Incline Fly":"Lying on a bench set to a 30-degree incline, feet flat, palms facing each other.","Incline J Row":"Lying face down on a bench set to a 30-degree incline, chest supported on the pad, feet on the floor, palms facing each other.","Weighted Pushup Row":"High plank with his hands gripping two dumbbells on the floor, feet wider than hip-width, body straight.","Narrow Hanging Squat":"Feet close together, a dumbbell in each hand hanging at his sides, palms facing in.","1.5 Deadlift":"Feet hip-width, a dumbbell in each hand, palms facing his body.","Long Stride Isometric Lunge":"Long split stance, a dumbbell in each hand at his sides.","Bench Tap Sumo Squat":"Wide stance in front of a flat bench, toes turned out, holding one dumbbell vertically between his legs.","Corner Lunge Squat":"A dumbbell in each hand at his sides.","Quad Burner Calf Raise":"Bodyweight only, arms reaching straight forward for balance.","Squat Around the Bench":"Holding one dumbbell vertically at his chest, next to a flat bench.","Heel Dig on Bench":"Lying on his back on the floor, heels on top of a flat bench, knees bent about 90 degrees, arms at his sides.","Bench Knee Sprints":"High plank with his hands on a flat bench, body straight.","Sumo Deadlift to Sumo Squat":"Wide stance, toes turned out, one dumbbell held vertically between his legs with both hands.","Full Body Crunch":"Lying on his back on a mat.","Reverse Lunge Leg Kickback":"A dumbbell in each hand at his sides.","Oblique Knee Drive":"Standing tall, fingertips behind his head, elbows wide.","10 and 2 Shoulder Raise Pyramid":"Standing tall with very light dumbbells, palms facing in.","M Curl":"Standing tall, a dumbbell in each hand.","Tricep Bench Dip with Leg Extension":"Hands on the edge of a flat bench behind him, fingers forward, right leg extended straight with the heel on the floor, left foot flat.","Iron Cross":"Lying on his back on a mat, arms out to the sides in a T, palms down.","Reverse Curl":"Standing tall, a dumbbell in each hand, palms facing down.","Tricep Press":"Lying on a flat bench, feet flat, a dumbbell in each hand, palms facing each other.","Knee Tuck on Bench":"Seated on the edge of a flat bench, hands gripping the bench beside his hips, torso leaning back.","Concentration Curl":"Seated on the end of a flat bench, feet wide, leaning forward slightly, right elbow braced against his inner right thigh.","Tricep Pushup to Downward Dog":"Hands close together on the edge of a flat bench, elbows tucked.","Seated Bicycles":"Seated on a mat, leaning back on his hands, feet lifted.","90 Degree Iso Curl External Rotation":"Standing tall, elbows bent 90 degrees and pinned to his sides, a dumbbell in each hand.","Tricep Kickback":"Hinged forward with a flat back, upper arms pinned parallel to his torso, palms facing in.","Incline Chest Fly":"Lying on a bench set to a 30-degree incline, feet flat, palms facing each other.","Standing Chest Fly":"Standing tall with a slight forward lean, light dumbbells, palms facing forward.","Slow Wide Incline Pushup":"Hands wider than his shoulders on the edge of a flat bench, body in one straight line.","Mid-Back Row":"Hinged forward at the hips about 45 degrees, flat back, soft knees, palms facing behind him.","Seated Crunches":"Seated on the edge of a flat bench, hands gripping the bench beside his hips.","Twisting Hip Fly":"Hinged forward at the hips, flat back, dumbbell in his right hand, left hand on his knee.","Bicycle Toe Touches":"Lying on his back on a mat.","Rear Delt Fly":"Hinged forward until his torso is nearly parallel to the floor, flat back, soft knees, palms facing each other.","Bench Flutter Kicks":"Lying on his back on a flat bench, hands gripping the bench behind his head, legs straight.","Iso Lat Plank on Bench":"Side plank with his right forearm on a flat bench, feet stacked on the floor.","21s Hammer Curl":"Standing tall, a dumbbell in each hand, palms facing each other.","Close Grip Tricep Press":"Lying on a flat bench, feet flat, dumbbells pressed together, palms facing each other.","21s Tricep Kickback":"Hinged forward with a flat back, upper arms pinned to his sides.","Reciprocating Hammer Curl":"Standing tall, palms facing each other.","Tricep Dips on Bench":"Hands on the edge of a flat bench behind him, fingers forward, knees bent 90 degrees, feet flat.","Reciprocating Neutral Curl":"Standing tall, a dumbbell in each hand.","Tricep Pushup on Bench":"Hands close together on the edge of a flat bench, body in one straight line.","Side-to-Side Squat":"Wide stance, holding one dumbbell vertically at his chest.","Heavy Deadlift":"Feet hip-width, a heavy dumbbell in each hand.","Sumo Squat":"Wide stance, toes turned out, holding one dumbbell vertically between his legs.","Walking Lunge with Strongman Walk Back":"A heavy dumbbell in each hand at his sides.","Side Step Up Adductor Squeeze":"Standing beside a flat bench, dumbbells at his sides.","Squat with Calf Raise":"Feet shoulder-width, a dumbbell in each hand at his sides.","Squat-Lunge-Squat-Stand":"A dumbbell in each hand at his sides.","Seated Oblique Knee Twist":"Seated on a mat in a V-sit, feet lifted, holding one dumbbell at his chest.","Seated In-and-Outs":"Seated on a mat, leaning back on his hands, feet lifted.","Arnold Press":"Seated upright on a bench with the back pad upright.","Rear Delt Raise":"Lying face down on a bench set to a 30-degree incline, chest on the pad.","Reverse-Grip Shoulder Press":"Seated upright on a bench, palms facing him, elbows pointing forward.","Steering Wheel":"Standing tall, arms straight out in front at shoulder height, holding one dumbbell by its two ends.","Goblet Squat Knee Drive":"Feet shoulder-width, holding one dumbbell vertically at his chest with both hands."};
+const IMG={"Seated Switch Kicks":"img/seated-switch-kicks.jpg","Knee Raise":"img/knee-raise.jpg","Overhead Tricep Extension":"img/overhead-tricep-extension.jpg","Underhand Row":"img/underhand-row.jpg","Incline Chest Press":"img/incline-chest-press.jpg",
+ "Iron Cross Abs":"img/iron-cross-abs.jpg","Lateral Raise":"img/lateral-raise.jpg","Bicep Curl with Leg Extension":"img/bicep-curl-leg-extension.jpg",
+ "Tricep Dip":"img/tricep-dip.jpg","Tricep Dips on Bench":"img/tricep-dip.jpg","J Row":"img/j-row.jpg","Incline Pushup":"img/incline-pushup.jpg","Shoulder Press":"img/shoulder-press.jpg","Hammer Curl":"img/hammer-curl.jpg",
+ "Sumo Squat Calf Raise":"img/sumo-squat-calf-raise.jpg","Bench Step Up":"img/bench-step-up.jpg","Glute Pull":"img/glute-pull.jpg","Goblet Squat Knee Drive":"img/goblet-squat-knee-drive.jpg",
+ "Heel Digs":"img/heel-digs.jpg","Revolving Lunge":"img/revolving-lunge.jpg","Hanging Squat":"img/hanging-squat.jpg",
+ "Corner Lunge Knee Drive":"img/corner-lunge-knee-drive.jpg","Small Range Deadlift":"img/small-range-deadlift.jpg","Lunge Wood Chop Heel Lift":"img/lunge-wood-chop-heel-lift.jpg",
+ "Decline Pushup":"img/decline-pushup.jpg","Bench Squat Tap":"img/bench-squat-tap.jpg","Straight Leg Lift":"img/straight-leg-lift.jpg","Underhand Bent-Over Row":"img/underhand-bent-over-row.jpg",
+ "Reverse Lunge":"img/reverse-lunge.jpg","Oblique Knee-to-Elbow Tap":"img/oblique-knee-to-elbow-tap.jpg","Kneeling Tricep Kickback":"img/kneeling-tricep-kickback.jpg","Step Up Sumo Squat":"img/step-up-sumo-squat.jpg",
+ "Seated Knee Tuck":"img/seated-knee-tuck.jpg","Seated Dual Hammer Curl":"img/seated-dual-hammer-curl.jpg","In-and-Out Pop Squat (bench)":"img/in-and-out-pop-squat.jpg","Bent Knee Drive":"img/bent-knee-drive.jpg",
+ "Chest Fly to Hex Press":"img/chest-fly-hex-press.jpg","Single-Arm Row":"img/single-arm-row.jpg","Tricep Pushup on Bench to Downward Dog":"img/tricep-pushup-downward-dog.jpg",
+ "Twisting Curl":"img/twisting-curl.jpg","Front Raise":"img/front-raise.jpg","Low Plank Knee Drive on Bench":"img/low-plank-knee-drive.jpg","Twisting Chest Press":"img/twisting-chest-press.jpg",
+ "Underhand Tricep Kickback":"img/underhand-tricep-kickback.jpg","W Curl":"img/w-curl.jpg","Rear Delt Fly":"/_blob/eec9a6054cac0b36aa9f0010833b493e","Upright Row":"img/upright-row.jpg","Bicycle Double Tap":"img/bicycle-double-tap.jpg",
+ "Glute Step Up Heel Digs on Bench":"img/glute-step-up-heel-digs.jpg","Good Morning":"img/good-morning.jpg","Wide Sumo to Narrow Squat Pulse":"img/wide-sumo-narrow-squat.jpg","Adductor Squat Side Leg Lift":"img/adductor-squat-side-leg-lift.jpg",
+ "Loaded Reverse Lunge DB Pass":"img/loaded-reverse-lunge-db-pass.jpg","1.5 Squat":"img/one-and-half-squat.jpg","Hip Thrust Opener":"img/hip-thrust-opener.jpg","Glute Goblet Squat":"img/glute-goblet-squat.jpg","Bulgarian Split Squat":"img/bulgarian-split-squat.jpg",
+ "90 Degree Ab Hold":"img/ninety-degree-ab-hold.jpg","Row":"img/row.jpg","Weighted L Hold":"img/weighted-l-hold.jpg","Forearm Plank":"img/forearm-plank.jpg","Reverse Quad-Focus Lunge":"img/reverse-quad-focus-lunge.jpg",
+ "Chest Press":"img/chest-press.jpg","Dumbbell Pullover":"img/dumbbell-pullover.jpg","Chest Fly":"img/chest-fly.jpg","Bent-Over Twisting Row":"img/bent-over-twisting-row.jpg","Hex Press":"img/hex-press.jpg","Incline Fly":"img/incline-fly.jpg","Incline J Row":"img/incline-j-row.jpg","Weighted Pushup Row":"img/weighted-pushup-row.jpg","Close Grip Row":"img/close-grip-row.jpg",
+ "Narrow Hanging Squat":"img/narrow-hanging-squat.jpg","Squat Around the Bench":"img/squat-around-bench.jpg","Quad Burner Calf Raise":"img/quad-burner-calf-raise.jpg","Corner Lunge Squat":"img/corner-lunge-squat.jpg","Bench Tap Sumo Squat":"img/bench-tap-sumo-squat.jpg","Long Stride Isometric Lunge":"img/long-stride-iso-lunge.jpg","1.5 Deadlift":"img/one-and-half-deadlift.jpg",
+ "Heel Dig on Bench":"img/heel-dig-on-bench.jpg","10 and 2 Shoulder Raise Pyramid":"img/ten-and-two-raise.jpg","Oblique Knee Drive":"img/oblique-knee-drive.jpg","Reverse Lunge Leg Kickback":"img/reverse-lunge-leg-kickback.jpg","Full Body Crunch":"img/full-body-crunch.jpg","Sumo Deadlift to Sumo Squat":"img/sumo-deadlift-sumo-squat.jpg","Bench Knee Sprints":"img/bench-knee-sprints.jpg",
+ "Iron Cross":"img/iron-cross.jpg","Tricep Bench Dip with Leg Extension":"img/tricep-bench-dip-leg-ext.jpg","M Curl":"img/m-curl.jpg","Tricep Kickback":"img/tricep-kickback.jpg","90 Degree Iso Curl External Rotation":"img/iso-curl-external-rotation.jpg","Seated Bicycles":"img/seated-bicycles.jpg","Tricep Pushup to Downward Dog":"img/tricep-pushup-down-dog-c2.jpg","Concentration Curl":"img/concentration-curl.jpg","Knee Tuck on Bench":"img/knee-tuck-on-bench.jpg","Tricep Press":"img/tricep-press.jpg","Reverse Curl":"img/reverse-curl.jpg",
+ "Incline Chest Fly":"img/incline-chest-fly.jpg","Slow Wide Incline Pushup":"img/slow-wide-incline-pushup.jpg","Standing Chest Fly":"img/standing-chest-fly.jpg",
+ "Walking Lunge with Strongman Walk Back":"img/walking-lunge-strongman.jpg","Sumo Squat":"img/sumo-squat.jpg","Heavy Deadlift":"img/heavy-deadlift.jpg","Side-to-Side Squat":"img/side-to-side-squat.jpg","Squat-Lunge-Squat-Stand":"img/squat-lunge-squat-stand.jpg","Squat with Calf Raise":"img/squat-calf-raise.jpg","Side Step Up Adductor Squeeze":"img/side-step-up-adductor.jpg",
+ "Mid-Back Row":"/_blob/c09535a75853ebfce809c507487fb798","Seated Crunches":"/_blob/4c6e5fa366a1c16d2ae57711daf769e5","Twisting Hip Fly":"/_blob/4d9be6007d1f6d85d2c9f88b2191c896","Bicycle Toe Touches":"/_blob/a75d4e3efb6afb50f9920be295229532","Bench Flutter Kicks":"/_blob/cd91f7f9a357e4e672a6e9585753616f","Iso Lat Plank on Bench":"/_blob/31d06bab8def3fbbf6e8be79fbd1d699",
+ "21s Hammer Curl":"/_blob/10dacdbcf83bbb54cf39f232f08b2be6","Close Grip Tricep Press":"/_blob/ed99616391592831d03238a6d6474009","21s Tricep Kickback":"/_blob/0142131a6be8b95c590f7bfadcf8b297","Reciprocating Hammer Curl":"/_blob/3377b6c0cbcc2d88a240821adc16d081","Reciprocating Neutral Curl":"/_blob/a720e82d92e56e85c668f644bc0dde92","Tricep Pushup on Bench":"/_blob/d0d2f3107e39bd6436e47faf5acf71c7","Seated Oblique Knee Twist":"/_blob/e0efee6969ba47a00a1ee93118048f12","Steering Wheel":"/_blob/1d6acf40815d6b9a9de496821e7b3480","Reverse-Grip Shoulder Press":"/_blob/e8d1004204a61368ca4dce642e1c7267","Rear Delt Raise":"/_blob/aa4534f1e0c23a12691696bec68b2fc4","Arnold Press":"/_blob/be807a7c62281a7d8db4d91e67947762","Seated In-and-Outs":"/_blob/e77f2fd3eb5fd3b6988296b382562cdb"};
+const WX=new Set(["Seated Dual Hammer Curl", "Twisting Chest Press", "Underhand Tricep Kickback", "W Curl", "Row", "Bent-Over Twisting Row", "Incline Fly", "Incline J Row", "Concentration Curl", "Tricep Kickback", "Incline Chest Fly", "Mid-Back Row", "Rear Delt Fly", "21s Tricep Kickback", "Reciprocating Hammer Curl", "Arnold Press", "Rear Delt Raise", "Reverse-Grip Shoulder Press"]);
+const PICS={"img/adductor-squat-side-leg-lift.jpg":"/_blob/d51033e66dc32a94602ca099fafc75d5","img/bench-squat-tap.jpg":"/_blob/e7d2d04d892ec626e04f9719f96a0bce","img/bench-step-up.jpg":"/_blob/95feae636440c30553529af3b9da3125","img/bent-knee-drive.jpg":"/_blob/4b6bb613e27e552f97b30e79bd65df9f","img/bicep-curl-leg-extension.jpg":"/_blob/12626dba9b36add473a5abde5fff3e7a","img/bicycle-double-tap.jpg":"/_blob/a5ac89e93a201243cc25a7e8f0d3fe16","img/bulgarian-split-squat.jpg":"/_blob/14ee7b370dcbac6ed4605a1cd89f7c0a","img/chest-fly-hex-press.jpg":"/_blob/7c899db3e5c0c6cc83eebbf33107afc5","img/corner-lunge-knee-drive.jpg":"/_blob/2f48a2c1e4c2f569890440e257a5e0d1","img/decline-pushup.jpg":"/_blob/82780a798457e38399ca2870b3e65332","img/front-raise.jpg":"/_blob/f9ef850d1b0466710ee8a896c4202383","img/glute-goblet-squat.jpg":"/_blob/1609f1bcda6a86b788edbfacbfb39613","img/glute-pull.jpg":"/_blob/66ec54b4a2417844838edc160ca00803","img/glute-step-up-heel-digs.jpg":"/_blob/6d9cc16f0441d4b749f9010ccb777038","img/goblet-squat-knee-drive.jpg":"/_blob/5ff764b5f367223f74c364be613734c7","img/good-morning.jpg":"/_blob/4e6a20a05553a79c2fc2b561e7342f91","img/hammer-curl.jpg":"/_blob/0e9f572ba4e418439ceb54cf2a4c7788","img/hanging-squat.jpg":"/_blob/4145f181d43cb7196453ff659d42212c","img/heel-digs.jpg":"/_blob/f3bbc552402f863b7a77318806d5091a","img/hip-thrust-opener.jpg":"/_blob/03a3b1dea1e8827cb18124badf221dcb","img/in-and-out-pop-squat.jpg":"/_blob/87b85be465ef3f2ac27a9fa331aa31fd","img/incline-chest-press.jpg":"/_blob/ceaffb5d6ae2304c1518975618bd7c38","img/incline-pushup.jpg":"/_blob/d3127350308dc146368c50b9156bfa34","img/iron-cross-abs.jpg":"/_blob/464802b3e030d285b57b3d36f9111e14","img/j-row.jpg":"/_blob/c69de966bab96d2eef3080272d537366","img/knee-raise.jpg":"/_blob/ebdced43ff425735ca1b460556eb1b24","img/kneeling-tricep-kickback.jpg":"/_blob/afe6e90cc8ff95a93311715a987588e8","img/lateral-raise.jpg":"/_blob/900859b85a7405a3b1578e398815e0b0","img/loaded-reverse-lunge-db-pass.jpg":"/_blob/4ae575ed1c67bca16c0c922af880adb4","img/low-plank-knee-drive.jpg":"/_blob/5a2e26902635b3f704a92cc75084c067","img/lunge-wood-chop-heel-lift.jpg":"/_blob/bb8ade5f1d1cb7ed616660363d33eb63","img/oblique-knee-to-elbow-tap.jpg":"/_blob/f385ccd022b6601f199b2ab504e6767d","img/one-and-half-squat.jpg":"/_blob/ad81101503956aef6cf50502331bb488","img/overhead-tricep-extension.jpg":"/_blob/0eb272354c66fea14268ef4d05986265","img/rear-delt-fly.jpg":"/_blob/7f2f0ff76bc93a8cba46ffd515a286ed","img/reverse-lunge.jpg":"/_blob/ec394441abdd917d6fa20973d9b73344","img/revolving-lunge.jpg":"/_blob/72ccaeaf313cfc7028d0224d902aa96e","img/seated-dual-hammer-curl.jpg":"/_blob/76390b657ff70615baf19a265efd1a19","img/seated-knee-tuck.jpg":"/_blob/fa69f22856f0bb6d117ba6edcd90f5d2","img/seated-switch-kicks.jpg":"/_blob/b09c1c149b1624d7cfce87b11baf505e","img/shoulder-press.jpg":"/_blob/bb278bbdf8e1e4b950e7ff8559bb4436","img/single-arm-row.jpg":"/_blob/03bb76aec18a3d83d89f214b67f47367","img/small-range-deadlift.jpg":"/_blob/e6d51ebfccad22b967d3ea3ca9a6ad15","img/step-up-sumo-squat.jpg":"/_blob/1c307b1210d7260ff507ec6aa2240ea6","img/straight-leg-lift.jpg":"/_blob/5e74523f50cf5ea93d716ddd3db5a171","img/sumo-squat-calf-raise.jpg":"/_blob/0e4e02bf8e23a4954dff2d8b1ea6cd09","img/tricep-dip.jpg":"/_blob/27312c02c011d97226ae35aa16304649","img/tricep-pushup-downward-dog.jpg":"/_blob/74fc5921ce2cdba95bad5033ffcd9828","img/twisting-chest-press.jpg":"/_blob/913321398c52920c53e9f9f2c38f64dd","img/twisting-curl.jpg":"/_blob/24eb3dfcd5f733ab6c2d082905ba177a","img/underhand-bent-over-row.jpg":"/_blob/2b5f9f5df8f1d94b975725b3dd8f9936","img/underhand-row.jpg":"/_blob/0ce0b32d40c34d4c066c2c86e2e8cffd","img/underhand-tricep-kickback.jpg":"/_blob/70d5f79c805e58810ad857a990a1356b","img/upright-row.jpg":"/_blob/fff886b87b8548052f6aa764804bc612","img/w-curl.jpg":"/_blob/2e8352a7851a5999872174ae3b976277","img/wide-sumo-narrow-squat.jpg":"/_blob/6880f13251400601ddbc44fa8af2d72d","img/ninety-degree-ab-hold.jpg":"/_blob/f3caac12274a87d0fd3b808e4e0d535e","img/row.jpg":"/_blob/e0c71f98a467897077fc611e16b3acaf","img/weighted-l-hold.jpg":"/_blob/59afbe7bc82130bd1dced6ab226bb265","img/forearm-plank.jpg":"/_blob/ddd4b06fb3c1104fea33dd09e39bdf47","img/reverse-quad-focus-lunge.jpg":"/_blob/d271c2d775e1b2da4086e7e5bf76d69a","img/chest-press.jpg":"/_blob/b95d9e88473d10111d9eb4925e0517f0","img/dumbbell-pullover.jpg":"/_blob/bf1dbb46a0fa35d6456433c6c7770c4d","img/chest-fly.jpg":"/_blob/399956fdcaa8250f254da0fd42bcf49f","img/bent-over-twisting-row.jpg":"/_blob/4acd259bc1f5dbd90ab4f2aaf8c05329","img/hex-press.jpg":"/_blob/868299a4bedab7f9a6f2aff34537662f","img/incline-fly.jpg":"/_blob/5e8e0a7b2eb2fe7dcf5e73571f991dc3","img/incline-j-row.jpg":"/_blob/ef97392c81fd8a05b7be63392c5bec26","img/weighted-pushup-row.jpg":"/_blob/537d94069893fbaf6853e621303c9dc6","img/close-grip-row.jpg":"/_blob/1d3c39d828419ff74a6b30ec80588d8f","img/narrow-hanging-squat.jpg":"/_blob/2e3258b08b12b4b0f370d013995d2ea3","img/squat-around-bench.jpg":"/_blob/d478c80ddabd8e30426bf06a8261df25","img/quad-burner-calf-raise.jpg":"/_blob/b0fcb4678462cb05e4e92a5d82e8ef1d","img/corner-lunge-squat.jpg":"/_blob/a8f203a022056034fd4fb9c68a251562","img/bench-tap-sumo-squat.jpg":"/_blob/8c4f28752624d2b33045e66b43309545","img/long-stride-iso-lunge.jpg":"/_blob/764b590b732c14b0cbabaeb55402a1b8","img/one-and-half-deadlift.jpg":"/_blob/84b24c4b01aaa733f1c1870b352f05ca","img/heel-dig-on-bench.jpg":"/_blob/1e8c252b082a507d94beb954f5444c5a","img/ten-and-two-raise.jpg":"/_blob/919c659b5cfa230eee72cf6c48f9a0ee","img/oblique-knee-drive.jpg":"/_blob/623e10f13e4d8d9be2ddf3b5ffe8417f","img/reverse-lunge-leg-kickback.jpg":"/_blob/1108b2b4ca2e471f36681d12df9dc5b9","img/full-body-crunch.jpg":"/_blob/99f4a145d08367cfc03b7dc89084ff0e","img/sumo-deadlift-sumo-squat.jpg":"/_blob/0ccc83059121be445164e4598683c874","img/bench-knee-sprints.jpg":"/_blob/30212bd226e092b4a1136428cf9a4d82","img/iron-cross.jpg":"/_blob/b08f7cf7bdae518f5bd6ae0e76974a45","img/tricep-bench-dip-leg-ext.jpg":"/_blob/a897ab0b8addd7b2a335198f0f267907","img/m-curl.jpg":"/_blob/020d9c7d1dbe00f502fd59752fd0a748","img/tricep-kickback.jpg":"/_blob/f47ae712eadba3e8e32928cbe2230d5e","img/iso-curl-external-rotation.jpg":"/_blob/5b477296cc59af27822b8be69dd17802","img/seated-bicycles.jpg":"/_blob/f58067cdbe896ebc8cd12d837d7b80b0","img/tricep-pushup-down-dog-c2.jpg":"/_blob/ee9ddfd83e7c60ec3445172052d68bf2","img/concentration-curl.jpg":"/_blob/9deaa83fe69012606ffbe7e0c5238f6c","img/knee-tuck-on-bench.jpg":"/_blob/30422b26aa721ed752470ac428cb3d0f","img/tricep-press.jpg":"/_blob/0b142bf36316e1decbbb6669b92bdd6d","img/reverse-curl.jpg":"/_blob/fb6d6a863eb23762f12ede212ab2b570","img/incline-chest-fly.jpg":"/_blob/f335fca0c0dd05938f864d4e07bad756","img/slow-wide-incline-pushup.jpg":"/_blob/c02aed5f2da5071305a8be2dc5991bac","img/standing-chest-fly.jpg":"/_blob/496e90f9bc22cec2d88e5588215dea24","img/walking-lunge-strongman.jpg":"/_blob/11f67054c90a7c6952c764bf1ce0b955","img/sumo-squat.jpg":"/_blob/e30632dd74a07446d57d5e8a8a9f97d9","img/heavy-deadlift.jpg":"/_blob/4621c91d3bb35973d20a35d1f4c96d69","img/side-to-side-squat.jpg":"/_blob/7aa1c42d31dd2f33b99d387ada91c83f","img/squat-lunge-squat-stand.jpg":"/_blob/dd8359b30ef77a0a784636d5ffd61f87","img/squat-calf-raise.jpg":"/_blob/7260406ddd5cce435f9ee3413b0dd440","img/side-step-up-adductor.jpg":"/_blob/03024dc93a250ce08f233c26ba4ab85a"};
+for(const k in IMG)IMG[k]=PICS[IMG[k]]||IMG[k];
+const COLL=[
+ {k:"C1 Dynamic Circuits",short:"C1",name:"Circuits",wk:"Weeks 1–4"},
+ {k:"C2 Sculpt & Define",short:"C2",name:"Sculpt",wk:"Weeks 5–8"},
+ {k:"C3 The Build",short:"C3",name:"Build",wk:"Weeks 9–12"}];
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat"];
+/* Week runs Sunday to Friday: program days keep their saved keys (Mon..Sat) but show as Sun..Fri. */
+const SHOW={Mon:"Sun",Tue:"Mon",Wed:"Tue",Thu:"Wed",Fri:"Thu",Sat:"Fri"};
+const DAYNAME={Mon:"Sunday",Tue:"Monday",Wed:"Tuesday",Thu:"Wednesday",Fri:"Thursday",Sat:"Friday"};
+const WEIGHTS=[8,10,15,20,25,30,35,40];
+const DEF={restMove:10,restRound:60,restSet:45,mode:"tap",voice:"on",beep:"on",name:"",voiceName:"",rate:1.05,tick:"on"};
+// Shaun's pace: seconds per rep by collection, and each video's run time (used to size the rests)
+const TEMPO={"C1":2,"C2":4,"C3":3};
+const VID={"C1|Mon":2797,"C1|Tue":2720,"C1|Wed":2812,"C1|Thu":3015,"C1|Fri":2700,"C2|Mon":3102,"C2|Tue":2734,"C2|Wed":2382,"C2|Thu":2885,"C2|Fri":2492,"C3|Mon":2396,"C3|Tue":2721,"C3|Wed":2360,"C3|Thu":3074,"C3|Fri":2220};
+const paced=()=>S.mode==="shaun";
+
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function store(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+let S={...DEF,...load("ddt-settings",{})};
+let coll=load("ddt-coll",0)|0;
+let LAST=load("ddt-last",{}),RES=load("ddt-resume",null);
+/* Saved data: rounds (each 12-week run with its tracker), sessions (every finished workout, every set),
+   lifts (last weight per move). Kept in the artifact's database and mirrored on this phone. */
+let CUR=load("ddt-cur","r1"),ROUNDS=load("ddt-rounds",null),SESS=load("ddt-sess",null);
+if(!ROUNDS){ROUNDS={r1:{n:1,label:"Round 1",started:Date.now(),ended:null,track:load("ddt-track",{})}}}
+if(!SESS){SESS=load("ddt-hist",[]).map(h=>({...h,id:"s"+h.date,round:"r1",log:h.log||[]}))}
+if(!ROUNDS[CUR])CUR=Object.keys(ROUNDS)[0];
+let TR=ROUNDS[CUR].track;
+let DB=null,DBSTATE="local",OUT=load("ddt-out",[]),VIEW="home";
+/* Body stats + coach notes. Placeholder starting details; all editable on the home screen. */
+let BODY={age:30,sex:"m",hin:70,goal:180,protein:150,...load("ddt-body",{})},WEIGH=load("ddt-weigh",[]),COACH=load("ddt-coach",null);
+const slug=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"x";
+function cacheAll(){store("ddt-cur",CUR);store("ddt-rounds",ROUNDS);store("ddt-sess",SESS.slice(0,400));store("ddt-last",LAST);store("ddt-out",OUT)}
+function put(path,data){OUT=OUT.filter(o=>o.path!==path);OUT.push({path,data:JSON.parse(JSON.stringify(data))});store("ddt-out",OUT);flush()}
+let flushing=false;
+async function flush(){
+  if(!DB||flushing)return;flushing=true;
+  try{while(OUT.length){const o=OUT[0];
+    try{await DB.doc(o.path).set(o.data)}
+    catch(e){const c=e&&e.code;if(c==="invalid_argument"||c==="quota_exceeded"||c==="transform_error"){DBSTATE="error"}else{DBSTATE="retry";break}}
+    OUT.shift();store("ddt-out",OUT);if(DBSTATE==="retry")DBSTATE="db"}
+  }finally{flushing=false;if(!OUT.length&&DBSTATE!=="error")DBSTATE="db";paintStatus()}
+}
+function saveRound(id){cacheAll();put("rounds/"+(id||CUR),ROUNDS[id||CUR]);put("meta/app",{current:CUR})}
+function saveSession(s){SESS.unshift(s);cacheAll();put("sessions/"+s.id,s)}
+function upsertSess(s){const i=SESS.findIndex(x=>x.id===s.id);if(i>=0)SESS[i]=s;else SESS.unshift(s);cacheAll();put("sessions/"+s.id,s)}
+function sessObj(partial){const log=P.log.map(l=>({...l})),vol=log.reduce((a,l)=>a+(l.w&&l.reps?l.w*l.reps:0),0);
+  return{id:P.sid,round:CUR,date:P.t0,c:P.c,d:P.d,w:P.w,week:P.week,ms:P.ms,sets:log.length,vol,mode:S.mode,log,partial}}
+let pTimer=null;
+function savePartial(){clearTimeout(pTimer);pTimer=setTimeout(()=>{if(P&&P.log.length&&!P.done)upsertSess(sessObj(true))},800)}
+/* the same move's sets from the last workout that had it (not this one) */
+function prevSets(ex){const sid=P&&P.sid;for(const s of SESS){if(s.id===sid)continue;const L=(s.log||[]).filter(l=>l.ex===ex);if(L.length)return{date:s.date,sets:L}}return null}
+function saveLift(ex){cacheAll();put("lifts/"+slug(ex),{ex,...LAST[ex]})}
+function paintStatus(){const el=$("#status");if(!el)return;
+  el.className="status"+(DBSTATE==="db"?"":" warn");
+  el.innerHTML=DBSTATE==="db"?`${ICON.check} Saved to your account`:DBSTATE==="retry"||OUT.length&&DB?"Saving…":DBSTATE==="error"?"Some data couldn't be saved. Download a backup below.":"Saved on this phone only"}
+async function connectDB(){
+  let db=null;try{db=window.claude&&window.claude.use?await window.claude.use("db"):null}catch(e){db=null}
+  if(!db){DBSTATE="local";paintStatus();return}
+  DB=db;DBSTATE="db";
+  try{
+    const meta=await db.doc("meta/app").get();
+    if(!meta.exists){
+      // first time on the database: copy everything already on this phone up
+      Object.keys(ROUNDS).forEach(id=>put("rounds/"+id,ROUNDS[id]));
+      SESS.forEach(s=>put("sessions/"+s.id,s));
+      Object.keys(LAST).forEach(ex=>put("lifts/"+slug(ex),{ex,...LAST[ex]}));
+      put("meta/app",{current:CUR});
+    }else{
+      const clone=d=>JSON.parse(JSON.stringify(d.data()));
+      const [rs,ss,ls]=await Promise.all([db.collection("rounds").get(),db.collection("sessions").orderBy("date","desc").limit(1000).get(),db.collection("lifts").get()]);
+      const R={};rs.docs.forEach(d=>R[d.id]=clone(d));
+      const S2=ss.docs.map(clone);const L={};ls.docs.forEach(d=>{const x=clone(d);L[x.ex]=x});
+      // anything saved on this phone but not yet uploaded wins
+      OUT.forEach(o=>{const [col,id]=o.path.split("/");if(col==="rounds")R[id]=o.data;else if(col==="sessions"&&!S2.find(x=>x.id===id))S2.unshift(o.data);else if(col==="lifts")L[o.data.ex]=o.data});
+      if(Object.keys(R).length)ROUNDS=R;
+      CUR=(OUT.find(o=>o.path==="meta/app")||{data:meta.data()}).data.current||CUR;
+      if(!ROUNDS[CUR])CUR=Object.keys(ROUNDS)[0];
+      SESS=S2.sort((a,b)=>b.date-a.date);LAST={...LAST,...L};TR=ROUNDS[CUR].track||(ROUNDS[CUR].track={});
+      cacheAll();
+    }
+  }catch(e){DBSTATE="retry"}
+  try{await loadBody(db)}catch(e){}
+  flush();paintStatus();
+  if(VIEW==="home")home();
+}
+async function loadBody(db){
+  const cl=d=>JSON.parse(JSON.stringify(d.data()));
+  const [p,w,c]=await Promise.all([db.doc("body/profile").get(),db.collection("weighins").get(),db.doc("coach/latest").get()]);
+  if(p.exists)BODY={...BODY,...cl(p)};
+  const m={};WEIGH.forEach(x=>m[x.day]=x);w.docs.forEach(d=>{const x=cl(d);if(x.day)m[x.day]=x});
+  OUT.forEach(o=>{if(o.path.startsWith("weighins/"))m[o.data.day]=o.data});
+  WEIGH=Object.values(m).sort((a,b)=>a.day<b.day?-1:1);
+  if(c.exists){const x=cl(c);if(!COACH||x.date>=COACH.date)COACH=x}
+  store("ddt-body",BODY);store("ddt-weigh",WEIGH);store("ddt-coach",COACH);
+}
+async function backup(){
+  const rows=[["date","round","week","day","workout","move","set","weight_lb","reps","target"]];
+  SESS.slice().reverse().forEach(s=>{const r=ROUNDS[s.round]||{};const cnt={};(s.log||[]).forEach(l=>{cnt[l.ex]=(cnt[l.ex]||0)+1;rows.push([new Date(s.date).toISOString().slice(0,10),r.label||s.round,s.week||"",SHOW[s.d]||s.d,s.w,l.ex,cnt[l.ex],l.w??"",l.reps??"",l.target??""])});if(!(s.log||[]).length)rows.push([new Date(s.date).toISOString().slice(0,10),r.label||s.round,s.week||"",SHOW[s.d]||s.d,s.w,"","","","",""])});
+  const csv=rows.map(r=>r.map(v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(",")).join("\n");
+  const msg=$("#bkmsg");
+  let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}
+  if(!dl){if(msg)msg.textContent="Downloads aren't available here. Open the timer in the Claude app or claude.ai.";return}
+  try{await dl.save({filename:`dig-deeper-log-${new Date().toISOString().slice(0,10)}.csv`,data:csv});if(msg)msg.textContent="Backup saved."}
+  catch(e){if(msg)msg.textContent=e&&e.code==="declined"?"Download cancelled.":"Couldn't save the file here."}
+}
+function newRound(){
+  const n=Math.max(...Object.values(ROUNDS).map(r=>r.n||1))+1,id="r"+n;
+  ROUNDS[CUR].ended=Date.now();saveRound(CUR);
+  ROUNDS[id]={n,label:"Round "+n,started:Date.now(),ended:null,track:{}};CUR=id;TR=ROUNDS[CUR].track;
+  store("ddt-resume",null);saveRound(id);
+}
+
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const weighted=ex=>WX.has(ex)||/dumbbell/i.test(SETUP[ex]||"");
+const collOfWeek=w=>w<=4?0:w<=8?1:2;
+const wname=(c,d)=>(DATA.find(r=>r[0]===c&&r[1]===d)||[])[2]||"";
+const mins=s=>Math.round(s/60)+" min";
+const clock=ms=>{const s=Math.max(0,Math.round(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const fmtDate=t=>new Date(t).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+const ICON={
+  fsx:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
+  fs:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  x:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  up:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>',
+  play:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"/></svg>',
+  check:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>'};
+
+function nextUp(){for(let w=1;w<=12;w++)for(const d of DAYS.slice(0,5))if(!TR[w+"-"+d])return{w,d};return null}
+function weekFor(c,d){const ci=COLL.findIndex(x=>x.k===c);for(let w=ci*4+1;w<=ci*4+4;w++)if(!TR[w+"-"+d])return w;return null}
+function lastInfo(ex){const L=LAST[ex];if(!L||!L.w)return null;const n=L.hit?WEIGHTS.find(x=>x>L.w):null;return{w:L.w,reps:L.reps,hit:L.hit,next:n,max:L.hit&&!n}}
+
+function rows(c,d){return DATA.filter(r=>r[0]===c&&r[1]===d).map(r=>({grp:r[3],ex:r[4],sets:r[5],reps:r[6],dur:r[7],note:r[8]}))}
+function repsFor(e,i){
+  if(!e.reps)return "";
+  const whole=/^21s/.test(e.ex)||/triple|R\/L/i.test(e.note);
+  if(whole)return e.reps.split("/").join(" + ");
+  if(e.reps.includes("-"))return e.reps.replace(/-/g," · ");
+  const p=e.reps.split("/");return p.length===e.sets?p[i-1]:e.reps;
+}
+function repCount(t){const m=String(t).match(/\d+/g);return m?m.reduce((a,b)=>a+ +b,0):12}
+function build(c,d){
+  const list=rows(c,d),blocks=[];
+  list.forEach(e=>{const l=blocks[blocks.length-1];if(e.grp&&l&&l.grp===e.grp)l.items.push(e);else blocks.push({grp:e.grp,items:[e]})});
+  const st=[];
+  blocks.forEach((b,bi)=>{
+    const rounds=Math.max(...b.items.map(x=>x.sets)),circuit=b.items.length>1;
+    for(let r=1;r<=rounds;r++){
+      const these=b.items.filter(x=>r>rounds-x.sets);
+      these.forEach((e,ii)=>{
+        const si=r-(rounds-e.sets);
+        st.push({t:"work",tp:TEMPO[c.slice(0,2)]||3,ex:e.ex,note:e.note,dur:e.dur,reps:repsFor(e,si),set:si,sets:e.sets,round:r,rounds,circuit});
+        const lastIn=ii===these.length-1;
+        if(lastIn&&r===rounds&&bi===blocks.length-1)return;
+        if(circuit&&!lastIn){if(S.restMove>0)st.push({t:"rest",dur:S.restMove,kind:"move"})}
+        else st.push({t:"rest",dur:circuit||r===rounds?S.restRound:S.restSet,kind:circuit?"round":"set"});
+      });
+    }
+  });
+  const out=[];
+  st.forEach(s=>{if(s.t==="work"){const p=out[out.length-1],first=s.circuit?s.round===1:s.set===1;if(!p||(p.t==="work"&&first&&p.ex!==s.ex))out.push({t:"prep",dur:5})}out.push(s)});
+  if(paced()&&VID[c.slice(0,2)+"|"+d]){
+    const work=out.filter(s=>s.t==="work").reduce((a,s)=>a+(s.dur||repCount(s.reps)*s.tp+3),0);
+    const rests=out.filter(s=>s.t==="rest"),base=rests.reduce((a,s)=>a+s.dur,0);
+    const want=VID[c.slice(0,2)+"|"+d]-240-work-out.filter(s=>s.t==="prep").length*5;
+    if(base>0&&want>0){const f=want/base;rests.forEach(s=>s.dur=Math.max(5,Math.min(120,Math.round(s.dur*f/5)*5)))}
+  }
+  return out;
+}
+function estimate(st){return st.reduce((a,s)=>a+(s.dur||(paced()?repCount(s.reps)*s.tp+3:repCount(s.reps)*3.5)),0)}
+function moveList(steps){const m=[];steps.forEach(s=>{if(s.t==="work"&&!m.includes(s.ex))m.push(s.ex)});return m}
+function ring(size,stroke,frac,cls,inner){
+  const r=(size-stroke)/2,c=2*Math.PI*r;
+  return `<div class="ring ${cls||""}" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"/><circle class="val" id="rv" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c*(1-frac)).toFixed(1)}" data-c="${c.toFixed(1)}"/></svg><div class="mid" id="rm">${inner}</div></div>`;
+}
+
+/* ---------- Home ---------- */
+function home(){
+  stopAll();
+  RES=load("ddt-resume",null);
+  const nx=nextUp(),C=COLL[coll];
+  const doneAll=Object.keys(TR).filter(k=>!k.endsWith("Sat")).length;
+  const pct=Math.min(100,Math.round(doneAll/60*100));
+  const curW=nx?nx.w:12;
+  const doneWeek=DAYS.slice(0,5).filter(d=>TR[curW+"-"+d]).length;
+  const hr=new Date().getHours(),part=hr<12?"morning":hr<17?"afternoon":"evening";
+  const ups=Object.keys(LAST).filter(ex=>{const L=lastInfo(ex);return L&&L.next});
+  let h=`<div class="cols"><div class="colA"><div class="hello"><span>${DAYNAME[DAYS[new Date().getDay()]]||"Saturday"} ${part}</span><h1>Ready when you are${S.name?", "+esc(S.name):""}.</h1><span class="status" id="status"></span><button class="fshome" id="fsapp">${BIG?ICON.fsx:ICON.fs}<span>${BIG?"Exit full screen":"Full screen"}</span></button></div>`;
+  if(RES&&RES.c){
+    const tot=build(RES.c,RES.d).filter(s=>s.t==="work").length,dn=(RES.log||[]).length;
+    h+=`<div class="card tip resume"><div class="ic">${ICON.play}</div><div><b>Pick up where you left off</b><span>${esc(wname(RES.c,RES.d))} · ${dn} of ${tot} sets</span></div><div class="btns"><button class="sm pri" id="resume">Resume</button><button class="sm sec" id="discard" aria-label="Discard saved workout">${ICON.x}</button></div></div>`;
+  }
+  h+=`<div class="card pad prog">${ring(104,12,pct/100,"",`<b>${pct}%</b><span>of program</span>`)}<div><span class="kick muted">${esc(ROUNDS[CUR].label)}</span><h2>Week ${curW} of 12</h2><p>${doneWeek} of 5 workouts done this week.${doneWeek<5&&nx?` ${5-doneWeek===1?"One more":(5-doneWeek)+" more"} to finish the week.`:""}</p></div></div>`;
+  if(nx){
+    const c=COLL[collOfWeek(nx.w)],st=build(c.k,nx.d),ml=moveList(st);
+    h+=`<div class="today"><span class="kick">${nx.d===DAYS[new Date().getDay()]?"Today":"Up next"} · ${DAYNAME[nx.d]} · ${c.short} ${c.name}</span><h2>${esc(wname(c.k,nx.d))}</h2>
+      <div class="pills"><span class="pill">${mins(estimate(st))}</span><span class="pill">${ml.length} moves</span><span class="pill">${st.filter(s=>s.t==="work").length} sets</span></div>
+      <button class="go" id="gonext">Let's go</button></div>`;
+  }else h+=`<div class="today"><span class="kick">All 12 weeks done</span><h2>Program complete</h2><p style="margin:0">Pick any workout below to keep going.</p></div>`;
+  h+=`<div><div class="sect">This week</div><div class="week" style="margin-top:10px">${DAYS.map((d,i)=>{const on=!!TR[curW+"-"+d],now=nx&&nx.w===curW&&nx.d===d;return `<div class="wd ${on?"on":""} ${now?"now":""}"><i>${on?ICON.check:i+1}</i>${SHOW[d]}</div>`}).join("")}</div></div>`;
+  if(ups.length)h+=`<div class="card tip"><div class="ic">${ICON.up}</div><div><b>Ready to go up on ${ups.length} move${ups.length>1?"s":""}</b><span>${esc(ups.slice(0,4).join(", "))}${ups.length>4?"…":""}</span></div></div>`;
+  h+=bodyCard()+coachCard();
+  h+=`</div><div class="colB"><details class="card" id="trk"><summary>12-week tracker</summary><p class="note" style="margin:0 0 10px">Tap a square to mark a day done or not done. Friday cardio is optional.</p>
+    <div class="grid"><span></span>${DAYS.map(d=>`<span class="gh">${SHOW[d][0]}</span>`).join("")}${Array.from({length:12},(_,i)=>{const w=i+1;return `<span class="wk">${w===1?"C1 ":w===5?"C2 ":w===9?"C3 ":""}W${w}</span>`+DAYS.map(d=>{const k=w+"-"+d,on=!!TR[k],isn=nx&&nx.w===w&&nx.d===d;return `<button class="cell ${on?"on":""} ${isn?"nx":""}" data-k="${k}" aria-pressed="${on}" aria-label="Week ${w} ${DAYNAME[d]}"></button>`}).join("")}).join("")}</div></details>`;
+  const mine=SESS.filter(x=>x.round===CUR);
+  h+=`<details class="card"><summary>Recent workouts</summary>${mine.length?`<div class="list">${mine.slice(0,10).map(x=>`<div class="li"><span><b>${esc(x.w)}</b><small>${fmtDate(x.date)}${x.week?" · Week "+x.week:""}${x.partial?" · not finished":""}</small></span><span class="num">${clock(x.ms)} · ${x.sets} sets${x.vol?" · "+x.vol.toLocaleString()+" lb":""}</span></div>`).join("")}</div>`:`<p class="note" style="margin:0 0 14px">Finished workouts show up here.</p>`}</details>`;
+  h+=`<div class="sect">All workouts</div><div class="seg" role="tablist">${COLL.map((x,i)=>`<button role="tab" id="tab${i}" data-i="${i}" aria-selected="${i===coll}">${x.short} ${x.name}<small>${x.wk}</small></button>`).join("")}</div>
+    <div class="days">${DAYS.map(d=>{const st=build(C.k,d);if(!st.length)return"";return `<button class="day" data-d="${d}"><span class="dw">${SHOW[d]}</span><span><b>${esc(wname(C.k,d))}</b><small>${d==="Sat"?"Optional low-impact cardio":moveList(st).length+" moves"}</small></span><span class="num">~${mins(estimate(st))}</span></button>`}).join("")}</div>`;
+  h+=`<details class="card" id="sets"><summary>Settings</summary>
+    ${sel("restMove","Rest between moves","Inside a circuit or superset",[0,5,10,15,20,30],v=>v?v+" s":"None")}
+    ${sel("restRound","Rest between rounds","After each full circuit",[30,45,60,75,90,120],v=>v+" s")}
+    ${sel("restSet","Rest between sets","Single exercises, set by set",[30,45,60,75,90],v=>v+" s")}
+    ${sel("mode","Rep sets","How a set of reps ends",["tap","shaun","auto"],v=>v==="tap"?"Tap Set done":v==="shaun"?"Follow Shaun's pace":"Auto, 3.5 s per rep")}
+    ${S.mode==="shaun"?`<p class="note" style="margin:0 0 6px">Reps run on a timer: C1 about 2 s per rep, C2 about 4 s (slow lowering), C3 about 3 s. Rests are sized so each workout runs about as long as Shaun's video.</p>`:""}
+    ${sel("tick","Rep ticks","A soft click on each rep in pace mode",["on","off"],v=>v==="on"?"On":"Off")}
+    <div class="set-row"><label for="voiceName">Voice<small id="vcount">Voices come from your phone</small></label><select id="voiceName"></select></div>
+    ${sel("rate","Voice speed","How fast it talks",[0.9,1,1.05,1.15,1.3],v=>v==1.05?"Normal":v<1.05?(v==0.9?"Slow":"A bit slower"):(v==1.3?"Fast":"A bit faster"))}
+    <div class="set-row"><span>Hear it</span><button class="sm sec" id="testv">Test voice</button></div>
+    ${sel("voice","Voice cues","Reads out each move",["on","off"],v=>v==="on"?"On":"Off")}
+    ${sel("describe","Describe moves","Reads a quick setup the first time each move comes up",["on","off"],v=>v==="on"?"On":"Off")}
+    ${sel("beep","Countdown beeps","Last 3 seconds",["on","off"],v=>v==="on"?"On":"Off")}
+    <div style="height:8px"></div></details>
+    <details class="card" id="rounds"><summary>Rounds &amp; backup</summary>
+    <div class="list">${Object.entries(ROUNDS).sort((a,b)=>(b[1].n||0)-(a[1].n||0)).map(([id,r])=>{const ss=SESS.filter(x=>x.round===id),vol=ss.reduce((a,x)=>a+(x.vol||0),0),days=Object.keys(r.track||{}).filter(k=>!k.endsWith("Sat")).length;
+      return `<div class="li"><span><b>${esc(r.label)}${id===CUR?" · current":""}</b><small>${fmtDate(r.started)}${r.ended?" – "+fmtDate(r.ended):" – now"} · ${days} of 60 days · ${ss.length} workout${ss.length===1?"":"s"}</small></span><span class="num">${vol?vol.toLocaleString()+" lb":""}</span></div>`}).join("")}</div>
+    <div id="nrbox" style="display:flex;flex-direction:column;gap:8px;padding-bottom:12px">
+      <button class="sm sec" id="newround" style="width:100%">Start a new 12-week round</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:16px"><button class="sm sec" id="bk" style="width:100%">Download backup (CSV)</button><span class="note" id="bkmsg">Every set you've logged, in a spreadsheet file.</span></div>
+  </details>
+  <p class="note">Lineups are based on a full-program review, not BODi's official worksheets.</p></div></div>`;
+  $("#app").innerHTML=h;
+  $$(".seg button").forEach(b=>b.onclick=()=>{coll=+b.dataset.i;store("ddt-coll",coll);home();document.querySelector(".seg").scrollIntoView({block:"start"})});
+  $$(".day").forEach(b=>b.onclick=()=>start(C.k,b.dataset.d));
+  $$(".cell").forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(TR[k])delete TR[k];else TR[k]=Date.now();saveRound();home();$("#trk").open=true});
+  fillVoices();
+  const tv=$("#testv");if(tv)tv.onclick=()=>say("Next, shoulder press. Grab the 25s.",true,S.describe!=="off"?spoken("Shoulder Press"):"");
+  $$("#sets select").forEach(s=>s.onchange=()=>{const v=s.value;S[s.id]=s.id==="voiceName"?v:(isNaN(+v)?v:+v);store("ddt-settings",S);home();$("#sets").open=true});
+  const g=$("#gonext");if(g)g.onclick=()=>start(COLL[collOfWeek(nx.w)].k,nx.d,nx.w);
+  const r=$("#resume");if(r)r.onclick=()=>start(RES.c,RES.d,RES.week,RES);
+  const x=$("#discard");if(x)x.onclick=()=>{store("ddt-resume",null);home()};
+  const bk=$("#bk");if(bk)bk.onclick=backup;
+  const nr=$("#newround");if(nr)nr.onclick=()=>{const n=Math.max(...Object.values(ROUNDS).map(r=>r.n||1))+1;
+    $("#nrbox").innerHTML=`<p class="note" style="margin:0">This starts the tracker over at Week 1 as Round ${n}. Everything from ${esc(ROUNDS[CUR].label)} stays saved, and your last weights carry over.</p><div style="display:flex;gap:8px"><button class="sm pri" id="nrok" style="flex:1">Start Round ${n}</button><button class="sm sec" id="nrno" style="flex:1">Cancel</button></div>`;
+    $("#nrok").onclick=()=>{newRound();home();window.scrollTo(0,0)};$("#nrno").onclick=()=>{home();$("#rounds").open=true}};
+  bindBody();
+  VIEW="home";paintStatus();bindFS();
+}
+/* ---------- Body stats ---------- */
+const dayKey=(t=Date.now())=>{const d=new Date(t);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const dayMs=k=>{const [y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d).getTime()};
+const fmt1=n=>(Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1});
+const fmt0=n=>Math.round(n).toLocaleString();
+function bodyStats(){
+  if(!WEIGH.length)return null;
+  const cur=WEIGH[WEIGH.length-1],first=WEIGH[0],lb=cur.lb,kg=lb*0.45359,cm=BODY.hin*2.54;
+  const bmi=703*lb/(BODY.hin*BODY.hin);
+  const bmr=10*kg+6.25*cm-5*BODY.age+(BODY.sex==="f"?-161:5);
+  // trend: least-squares slope over the last 28 days of weigh-ins
+  const end=dayMs(cur.day),pts=WEIGH.filter(x=>dayMs(x.day)>=end-28*864e5).map(x=>[(dayMs(x.day)-end)/864e5,x.lb]);
+  let rate=null;
+  if(pts.length>=3&&pts[pts.length-1][0]-pts[0][0]>=6){
+    const n=pts.length,mx=pts.reduce((a,p)=>a+p[0],0)/n,my=pts.reduce((a,p)=>a+p[1],0)/n;
+    const sxx=pts.reduce((a,p)=>a+(p[0]-mx)**2,0),sxy=pts.reduce((a,p)=>a+(p[0]-mx)*(p[1]-my),0);
+    if(sxx>0)rate=sxy/sxx*7;
+  }
+  const toGoal=lb-BODY.goal;
+  const eta=rate!=null&&rate<-0.05&&toGoal>0?Date.now()+toGoal/(-rate)*7*864e5:null;
+  // last 7 days of lifting, and calories for a typical finished workout (MET 5, circuit-style dumbbell work)
+  const wk=Date.now()-7*864e5,recent=SESS.filter(s=>s.date>=wk);
+  const done=SESS.filter(s=>!s.partial&&s.ms>0).slice(0,5);
+  const avgMs=done.length?done.reduce((a,s)=>a+s.ms,0)/done.length:null;
+  const wkcal=avgMs?5*kg*avgMs/3.6e6:null;
+  return{lb,day:cur.day,first,bmi,bmr,liftDay:bmr*1.55,restDay:bmr*1.3,rate,toGoal,eta,wkcal,
+    wkVol:recent.reduce((a,s)=>a+(s.vol||0),0),wkSets:recent.reduce((a,s)=>a+(s.sets||0),0),wkN:recent.filter(s=>!s.partial).length};
+}
+function spark(){
+  const pts=WEIGH.slice(-30);if(pts.length<2)return"";
+  const W=300,H=56,lo=Math.min(BODY.goal,...pts.map(p=>p.lb))-1,hi=Math.max(...pts.map(p=>p.lb))+1;
+  const t0=dayMs(pts[0].day),t1=dayMs(pts[pts.length-1].day)||t0+1;
+  const x=k=>((dayMs(k)-t0)/Math.max(1,t1-t0))*(W-8)+4,y=v=>H-4-((v-lo)/(hi-lo))*(H-8);
+  const gy=y(BODY.goal).toFixed(1);
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Weight trend, ${pts[0].lb} to ${pts[pts.length-1].lb} lb"><line class="gl" x1="0" x2="${W}" y1="${gy}" y2="${gy}"/><polyline class="ln" points="${pts.map(p=>x(p.day).toFixed(1)+","+y(p.lb).toFixed(1)).join(" ")}"/></svg>`;
+}
+function bodyCard(){
+  const b=bodyStats(),today=WEIGH.find(x=>x.day===dayKey());
+  const ft=Math.floor(BODY.hin/12),inch=BODY.hin%12;
+  let h=`<details class="card" id="body" ${b?"":"open"}><summary>Body stats</summary>`;
+  if(b){
+    const since=b.lb-b.first.lb;
+    h+=`<div class="bgrid">
+      <div class="bst hi"><b>${fmt1(b.lb)} lb</b><span>Weight · ${fmtDate(dayMs(b.day))}</span>${WEIGH.length>1?`<small>${since<=0?"":"+"}${fmt1(since)} lb since ${fmtDate(dayMs(b.first.day))}</small>`:""}</div>
+      <div class="bst"><b>${b.toGoal>0?fmt1(b.toGoal)+" lb":"Goal hit"}</b><span>To ${BODY.goal} lb</span><small>${b.eta?"On pace for "+new Date(b.eta).toLocaleDateString(undefined,{month:"short",day:"numeric"}):b.rate!=null?`Trend ${b.rate>0?"+":""}${fmt1(b.rate)} lb/week`:"Weigh in a few times for a trend"}</small></div>
+      <div class="bst"><b>${fmt0(b.liftDay)}</b><span>Calories burned, lifting day</span><small>About ${fmt0(b.restDay)} on rest days</small></div>
+      <div class="bst"><b>${fmt0(b.liftDay-500)}</b><span>Calories to lose ~1 lb/week</span><small>Lifting days, rough estimate</small></div>
+      <div class="bst"><b>${b.wkcal?"~"+fmt0(b.wkcal):"–"}</b><span>Calories per workout</span><small>${b.wkcal?"Based on your recent workouts":"Finish a workout to see this"}</small></div>
+      <div class="bst"><b>${BODY.protein} g</b><span>Protein per day</span><small>${fmt1(BODY.protein/b.lb)} g per lb of body weight</small></div>
+      <div class="bst"><b>${b.wkVol?b.wkVol.toLocaleString():"0"}</b><span>Pounds lifted, last 7 days</span><small>${b.wkN} workout${b.wkN===1?"":"s"} · ${b.wkSets} sets</small></div>
+      <div class="bst"><b>${fmt1(b.bmi)}</b><span>BMI</span><small>Doesn't account for muscle</small></div>
+    </div>${spark()}`;
+  }else h+=`<p class="note" style="margin:0 0 10px">Log your weight to see your trend, daily calorie burn and pace to your goal.</p>`;
+  h+=`<div class="wrow"><label for="wt">${today?"Today's weight (saved, tap to change)":"Today's weight"}<input class="bin" id="wt" type="number" inputmode="decimal" step="0.1" min="60" max="500" value="${today?today.lb:(b?b.lb:190)}"></label><button class="sm pri" id="wsave">Save</button></div>
+    <details id="bprof"><summary style="font-family:var(--f-body);font-size:.9rem;padding:4px 0 12px">Your details</summary>
+    <div class="pgrid">
+      <label for="bage">Age<input class="bin" id="bage" type="number" inputmode="numeric" value="${BODY.age}"></label>
+      <label for="bsex">Sex<select class="bin" id="bsex"><option value="m" ${BODY.sex!=="f"?"selected":""}>Male</option><option value="f" ${BODY.sex==="f"?"selected":""}>Female</option></select></label>
+      <label for="bft">Height, feet<input class="bin" id="bft" type="number" inputmode="numeric" value="${ft}"></label>
+      <label for="bin">Height, inches<input class="bin" id="bin" type="number" inputmode="numeric" value="${inch}"></label>
+      <label for="bgoal">Goal weight, lb<input class="bin" id="bgoal" type="number" inputmode="decimal" value="${BODY.goal}"></label>
+      <label for="bprot">Protein goal, g<input class="bin" id="bprot" type="number" inputmode="numeric" value="${BODY.protein}"></label>
+    </div><button class="sm sec" id="bpsave" style="width:100%;margin-bottom:14px">Save details</button></details>
+    <p class="note" style="margin:0 0 14px">Calorie numbers are estimates (Mifflin-St Jeor), not a measurement.</p></details>`;
+  return h;
+}
+function bindBody(){
+  const ws=$("#wsave");if(ws)ws.onclick=()=>{const v=+$("#wt").value;if(!(v>60&&v<500))return;
+    const e={day:dayKey(),lb:Math.round(v*10)/10,at:Date.now()};WEIGH=WEIGH.filter(x=>x.day!==e.day).concat(e).sort((a,b)=>a.day<b.day?-1:1);
+    store("ddt-weigh",WEIGH);put("weighins/"+e.day,e);home();const d=$("#body");if(d)d.open=true};
+  const ps=$("#bpsave");if(ps)ps.onclick=()=>{const n=id=>+$(id).value;
+    BODY={...BODY,age:n("#bage")||BODY.age,sex:$("#bsex").value,hin:(n("#bft")*12+n("#bin"))||BODY.hin,goal:n("#bgoal")||BODY.goal,protein:n("#bprot")||BODY.protein};
+    store("ddt-body",BODY);put("body/profile",BODY);home();const d=$("#body");if(d)d.open=true};
+  const cg=$("#coachgo");if(cg){cg.onclick=askCoach;getSample().then(s=>{if(!s){const c=$("#coach");if(c)c.hidden=true}})}
+}
+
+/* ---------- Coach: Claude reads the log and comments ---------- */
+let SAMPLE;
+async function getSample(){if(SAMPLE!==undefined)return SAMPLE;try{SAMPLE=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){SAMPLE=null}return SAMPLE}
+function coachCard(){
+  return `<div class="card pad coach" id="coach"><div class="sect" style="margin:0">Coach's take</div>
+    <p class="coachtxt" id="coachtxt">${COACH?esc(COACH.text):"Get Claude's read on your lifts, missed reps, weight trend and consistency, plus what to change next workout."}</p>
+    <span class="note" id="coachdate">${COACH?"From "+fmtDate(COACH.date):""}</span>
+    <button class="sm pri" id="coachgo">${COACH?"Get a fresh take":"Ask Claude"}</button></div>`;
+}
+function coachPrompt(){
+  const doneAll=Object.keys(TR).filter(k=>!k.endsWith("Sat")).length,nx=nextUp(),b=bodyStats();
+  const sess=SESS.slice(0,12).map(s=>{
+    const by={};(s.log||[]).forEach(l=>{(by[l.ex]=by[l.ex]||[]).push(l)});
+    const moves=Object.entries(by).map(([ex,L])=>{const w=[...new Set(L.map(l=>l.w).filter(Boolean))].join("/");
+      const r=L.filter(l=>l.reps!=null).map(l=>l.reps).join(",");const tg=L[0].target;
+      return `  ${ex}${w?" @ "+w+" lb":""}: reps ${r||"timed"}${tg?" (target "+tg+")":""}`}).join("\n");
+    return `${new Date(s.date).toDateString()} · ${s.w} (${s.c.slice(0,2)} ${SHOW[s.d]||s.d}, week ${s.week||"?"})${s.partial?" · NOT FINISHED":""} · ${Math.round((s.ms||0)/60000)} min · ${s.sets} sets · ${s.vol||0} lb total\n${moves}`;
+  }).join("\n\n");
+  const weigh=WEIGH.slice(-20).map(x=>`${x.day}: ${x.lb} lb`).join("\n");
+  return `You are a supportive, direct strength coach. Review ${S.name||"the user"}'s training log for Shaun T's 12-week DIG DEEPER dumbbell program and comment on his progress.
+
+About him: ${BODY.age}-year-old ${BODY.sex==="f"?"woman":"man"}, ${Math.floor(BODY.hin/12)}'${BODY.hin%12}", goal weight ${BODY.goal} lb, protein goal ${BODY.protein} g/day. Trains at home with an adjustable bench and one pair each of 8, 10, 15, 20, 25, 30, 35 and 40 lb dumbbells (nothing in between, nothing heavier).
+Program: 3 collections of 4 weeks (C1 Dynamic Circuits, C2 Sculpt & Define with slow 3-4 s lowering, C3 The Build with heavier lower-rep sets), 5 lifting days a week plus optional Friday cardio. ${ROUNDS[CUR].label}: ${doneAll} of 60 lifting days done; next up is ${nx?"week "+nx.w+" "+DAYNAME[nx.d]:"nothing (program finished)"}. Today is ${new Date().toDateString()}.
+${b?`Body: ${b.lb} lb on ${b.day}${b.rate!=null?`, trend ${b.rate.toFixed(1)} lb/week`:""}. Estimated burn ~${Math.round(b.liftDay)} kcal on lifting days.`:"No weigh-ins logged yet."}
+
+Weigh-ins:
+${weigh||"none"}
+
+Recent workouts (newest first; reps listed set by set):
+${sess||"none yet"}
+
+Write 4 to 6 short bullet points, each starting with "- ", under 180 words total, plain text with no headers, bold or emoji. Use specific moves and numbers from the log. Cover: what's going well; moves where he fell short of target reps and exactly what to do next time (stay, drop or go up, using only the weights he owns); consistency; his weight trend against his goal if there's data. If there's little data, say what to log. No medical advice.`;
+}
+async function askCoach(){
+  const s=await getSample(),b=$("#coachgo");if(!s){const c=$("#coach");if(c)c.hidden=true;return}
+  if(b)b.disabled=true;const o0=$("#coachtxt");if(o0)o0.textContent="Thinking...";
+  try{
+    const {text}=await s(coachPrompt(),{cache:false,onText:({text})=>{const o=$("#coachtxt");if(o)o.textContent=text}});
+    COACH={text,date:Date.now()};store("ddt-coach",COACH);put("coach/latest",COACH);
+    const d=$("#coachdate");if(d)d.textContent="Just now";
+  }catch(e){
+    const o=$("#coachtxt");if(!o)return;const c=e&&e.code;
+    if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared"||c==="capability_disabled"){o.textContent="Claude isn't turned on for this page. You can allow it from the page's permissions.";}
+    else if(c==="rate_limited")o.textContent="You've hit your Claude limit for now. Try again a little later.";
+    else if(c==="cancelled")o.textContent=COACH?COACH.text:"";
+    else o.textContent=(e&&e.text)||"Couldn't get a response. Tap to try again.";
+  }finally{const b2=$("#coachgo");if(b2){b2.disabled=false;b2.textContent="Get a fresh take"}}
+}
+function sel(id,label,hint,opts,fmt){return `<div class="set-row"><label for="${id}">${label}<small>${hint}</small></label><select id="${id}">${opts.map(o=>`<option value="${o}" ${S[id]==o?"selected":""}>${fmt(o)}</option>`).join("")}</select></div>`}
+
+/* ---------- Audio ---------- */
+let actx=null;
+function beep(f=880,ms=140){if(S.beep!=="on")return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.25,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}}
+function voices(){try{return (speechSynthesis.getVoices()||[]).filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
+function fillVoices(){const el=$("#voiceName");if(!el)return;const vs=voices();
+  el.innerHTML=`<option value="">Phone default</option>`+vs.map(v=>`<option value="${esc(v.name)}" ${S.voiceName===v.name?"selected":""}>${esc(v.name.replace(/^(Google|Microsoft)\s*/,""))} (${esc(v.lang)})</option>`).join("");
+  const c=$("#vcount");if(c)c.textContent=vs.length?`${vs.length} English voice${vs.length>1?"s":""} on this phone`:"Voices come from your phone";}
+try{speechSynthesis.onvoiceschanged=fillVoices}catch(e){}
+function say(t,force,desc,queue){if((S.voice!=="on"&&!force)||!window.speechSynthesis)return;try{if(!queue)speechSynthesis.cancel();const v=voices().find(x=>x.name===S.voiceName);
+  const mk=(txt,r)=>{const u=new SpeechSynthesisUtterance(txt);u.rate=r;if(v){u.voice=v;u.lang=v.lang}return u};
+  speechSynthesis.speak(mk(t,+S.rate||1.05));if(desc)speechSynthesis.speak(mk(desc,Math.min(1.6,(+S.rate||1.05)*1.2)))}catch(e){}}
+function spoken(ex){const s=SETUP[ex];if(!s)return"";
+  return s.replace(/\bhimself\b/g,"yourself").replace(/\bhis\b/g,"your").replace(/\bhim\b/g,"you").replace(/\bHe\b/g,"You").replace(/\bhe\b/g,"you").replace(/\bDB\b/g,"dumbbell")}
+let lock=null;async function wake(){try{lock=await navigator.wakeLock.request("screen")}catch(e){}}
+
+/* ---------- Player ---------- */
+let P=null,tick=null;
+function stopAll(){try{if(P&&P.pm)closePM()}catch(e){}clearInterval(tick);tick=null;try{speechSynthesis.cancel()}catch(e){};try{lock&&lock.release()}catch(e){};lock=null}
+function start(c,d,week,res){
+  const steps=build(c,d);
+  P={c,d,w:wname(c,d),steps,moves:moveList(steps),week:week??weekFor(c,d),i:0,end:0,left:0,total:0,paused:true,started:false,log:[],wsel:{},rsel:null,ms:0,lastT:0,t0:Date.now(),sid:"s"+Date.now()+"-"+Math.random().toString(36).slice(2,6)};
+  if(res){P.i=Math.min(res.i||0,steps.length-1);P.log=res.log||[];P.wsel=res.wsel||{};P.ms=res.ms||0;P.resumed=true;if(res.sid){P.sid=res.sid;P.t0=res.t0||P.t0}}
+  window.scrollTo(0,0);render();
+}
+function saveRes(){store("ddt-resume",{c:P.c,d:P.d,week:P.week,i:P.i,log:P.log,wsel:P.wsel,ms:P.ms,sid:P.sid,t0:P.t0})}
+function pickW(ex){if(P.wsel[ex]!=null)return P.wsel[ex];const L=lastInfo(ex);return L?L.w:null}
+function maxReps(s){return s.dur?0:repCount(s.reps)}
+function stepLen(s){if(s.t!=="work")return s.dur;if(s.dur)return s.dur;if(S.mode==="auto")return Math.round(repCount(s.reps)*3.5);if(paced())return Math.round(repCount(s.reps)*s.tp)+3;return 0}
+function repPhase(s){// for paced rep sets: which rep you're on and whether you're lowering
+  const el=P.total-P.left;if(el<3)return{rep:0,lead:true};const r=Math.floor((el-3)/s.tp);const inRep=(el-3)-r*s.tp;
+  return{rep:Math.min(maxReps(s),r+1),down:s.tp>=4&&inRep<3,r}}
+function upcoming(i){return P.steps.slice(i+1).find(x=>x.t==="work")}
+function prevWork(i){return P.steps.slice(0,i).reverse().find(x=>x.t==="work")}
+function enter(i){
+  P.i=i;const s=P.steps[i];if(!s){finish();return}
+  P.total=stepLen(s);P.left=P.total;P.end=Date.now()+P.left*1000;P.lastBeep=null;P.lastRep=-1;P.lastUD=null;P.fixOpen=false;
+  P.rsel=s.t==="work"?maxReps(s):null;
+  if(s.t==="work"){
+    beep(1046,180);
+    const st=s.circuit?`Round ${s.round} of ${s.rounds}.`:(s.sets>1?`Set ${s.set} of ${s.sets}.`:"");
+    const amt=s.dur?(s.dur>=120?Math.round(s.dur/60)+" minutes":s.dur+" seconds"):s.reps.replace(/\//g," ")+(/^\d+$/.test(s.reps)?" reps":"");
+    let busy=false;try{busy=speechSynthesis.speaking||speechSynthesis.pending}catch(e){}
+    if(busy)say(`Go. ${amt}.`,false,"",true);else say(`${st} ${s.ex}. ${amt}.`);
+  }else{
+    const n=upcoming(i),pw=prevWork(i),nm=n&&(!pw||pw.ex!==n.ex),w=n&&weighted(n.ex)?pickW(n.ex):null;
+    const grab=nm&&w?` Grab the ${w}s.`:"";
+    let desc="";if(n&&nm&&S.describe!=="off"&&!(P.described||(P.described=new Set())).has(n.ex)){P.described.add(n.ex);desc=spoken(n.ex)}
+    say(s.t==="prep"?`Get ready. ${n?n.ex:""}.${grab}`:`Rest ${s.dur} seconds. Next, ${n?n.ex:"done"}.${grab}`,false,desc);
+  }
+  saveRes();render();
+}
+function logSet(s){
+  if(!s||s.t!=="work")return;
+  const max=maxReps(s);
+  P.log.push({ex:s.ex,w:weighted(s.ex)?pickW(s.ex):null,reps:s.dur?null:(P.rsel??max),target:max||null});
+  savePartial();
+}
+function loop(){
+  const now=Date.now();if(P.started&&!P.paused)P.ms+=now-(P.lastT||now);P.lastT=now;
+  const c=$("#clk");if(c)c.textContent=clock(P.ms);
+  if(P.paused||!P.total)return;
+  P.left=Math.max(0,(P.end-now)/1000);
+  const sec=Math.ceil(P.left);
+  const cur=P.steps[P.i];
+  if(cur.t==="work"&&!cur.dur&&paced()){const ph=repPhase(cur);
+    if(!ph.lead&&ph.r!==P.lastRep){P.lastRep=ph.r;if(S.tick==="on")beep(ph.r%2?520:600,50);const left=maxReps(cur)-ph.rep;if(left===5&&maxReps(cur)>8)say("5 more");else if(left===0)say("last one")}
+    if(!ph.lead&&cur.tp>=4){const ud=ph.down?"d":"u";if(ud!==P.lastUD){P.lastUD=ud;if(ud==="u"&&S.tick==="on")beep(880,40)}}}
+  else if(sec<=3&&sec>0&&P.lastBeep!==sec){P.lastBeep=sec;beep(660,110)}
+  if(P.left<=0){logSet(P.steps[P.i]);enter(P.i+1);return}
+  paint();
+}
+function begin(){P.started=true;P.paused=false;P.lastT=Date.now();wake();try{actx=actx||new (window.AudioContext||window.webkitAudioContext)()}catch(e){};tick=setInterval(loop,200)}
+function main(){
+  if(!P.started){begin();enter(P.i);return}
+  const s=P.steps[P.i];
+  if(!P.total){logSet(s);enter(P.i+1);return}
+  P.paused=!P.paused;
+  if(P.paused){P.left=Math.max(0,(P.end-Date.now())/1000);try{speechSynthesis.cancel()}catch(e){}}else P.end=Date.now()+P.left*1000;
+  render();
+}
+function logNow(){logSet(P.steps[P.i]);enter(P.i+1)}
+function jump(d){if(!P.started)begin();let j=P.i+d;
+  if(d<0){while(j>0&&P.steps[j].t!=="work")j--}else{while(j<P.steps.length&&P.steps[j].t!=="work")j++}
+  enter(Math.max(0,j))}
+function addRest(){P.end+=15000;P.left+=15;P.total+=15;paint()}
+
+function render(){
+  VIEW="player";
+  const s=P.steps[P.i],work=s.t==="work",show=work?s:upcoming(P.i);
+  const curIdx=show?P.moves.indexOf(show.ex):P.moves.length;
+  const doneSet=new Set(P.log.map(l=>l.ex));
+  let h=`<div class="top"><button class="close" id="exit" aria-label="Back to home">${ICON.x}</button>
+    <div class="dots" aria-label="Move ${curIdx+1} of ${P.moves.length}">${P.moves.map((m,i)=>`<i class="${i===curIdx?"c":doneSet.has(m)?"d":""}"></i>`).join("")}</div>
+    <span class="clock" id="clk">${clock(P.ms)}</span><button class="close fsapp" id="fsapp" aria-label="${BIG?"Exit full screen":"Full screen"}" aria-pressed="${BIG}">${BIG?ICON.fsx:ICON.fs}</button></div><div class="cols${P.started&&!work?" rest":""}"><div class="colA">`;
+  if(!P.started){
+    h+=moveCard(show,`${P.week?"Week "+P.week+" · ":""}${DAYNAME[P.d]}`,"",`<b>${esc(P.w)}</b> · ${P.moves.length} moves · about ${mins(estimate(P.steps))}`);
+    h+=`<button class="big" id="main">${P.resumed?"Resume workout":"Start workout"}</button></div><div class="colB">`;
+    const info={};P.steps.forEach(x=>{if(x.t==="work"&&!info[x.ex])info[x.ex]={sets:0,s:x};if(x.t==="work")info[x.ex].sets++});
+    h+=`<div class="card plan"><div class="list">${P.moves.map((m,i)=>{const o=info[m],L=lastInfo(m);return `<div class="li"><span><b>${i+1}. ${esc(m)}</b><small>${o.sets} set${o.sets>1?"s":""} · ${o.s.dur?o.s.dur+" s":esc(o.s.reps)+(/^\d+$/.test(o.s.reps)?" reps":"")}${IMG[m]?"":" · no photo yet"}</small></span><span class="num">${weighted(m)?(L?L.w+" lb":"DBs"):"Body"}</span></div>`}).join("")}</div></div>`;
+  }else if(work){
+    const tag=s.circuit?`Round ${s.round} of ${s.rounds}`:(s.sets>1?`Set ${s.set} of ${s.sets}`:"Go");
+    const L=lastInfo(s.ex),max=maxReps(s);
+    const k=P.log.filter(l=>l.ex===s.ex).length,PV=prevSets(s.ex),pv=PV?(PV.sets[k]||PV.sets[PV.sets.length-1]):null,pvSet=PV&&PV.sets[k]?k+1:PV?PV.sets.length:0;
+    const lastTxt=L?`Last: ${L.w} lb${L.reps?" × "+L.reps:""}${L.next?` · <span class="up">try ${L.next}</span>`:""}`:"";
+    h+=moveCard(s,tag,"",s.note||"");
+    if(P.total){
+      h+=`<div class="card timer">${ring(170,14,P.left/P.total,"",`<b id="tv">${s.dur?Math.ceil(P.left):"–"}</b><span id="tl">${s.dur?"seconds":"get set"}</span>`)}</div>`;
+    }
+    h+=`</div><div class="colB">`;
+    if(weighted(s.ex)||max){
+      h+=`<div class="card pad pick">`;
+      if(max)h+=`<div class="target"><b>Target ${esc(s.reps)}${/^\d+$/.test(s.reps)?" reps":""}</b><span class="muted" style="font-size:.88rem">${lastTxt}</span></div>`;
+      else if(lastTxt)h+=`<div class="target"><b>${s.dur}s</b><span class="muted" style="font-size:.88rem">${lastTxt}</span></div>`;
+      if(weighted(s.ex)){const w=pickW(s.ex);h+=`<div class="lab"><span>Weight (lb)</span>${w?"":"<span>Tap yours</span>"}</div><div class="chips grid8" role="group" aria-label="Weight used">${WEIGHTS.map(x=>`<button class="chip wt${pv&&pv.w===x?" was":""}" data-w="${x}" aria-pressed="${w===x}">${x}</button>`).join("")}</div>${pv&&pv.w?`<div class="wasline">Last time, set ${pvSet}: <b>${pv.w} lb</b> · ${fmtDate(PV.date)}</div>`:""}`}
+      if(max){h+=`<div class="lab"><span>Reps done</span><span id="rlab">${P.rsel}</span></div><div class="chips scroll" id="reps" role="group" aria-label="Reps done">${Array.from({length:max},(_,i)=>max-i).map(n=>`<button class="chip rp ${n<max?"short":""}${pv&&pv.reps===n?" was":""}" data-r="${n}" aria-pressed="${P.rsel===n}">${n}</button>`).join("")}</div>${pv&&pv.reps!=null?`<div class="wasline">Last time, set ${pvSet}: <b>${pv.reps} of ${pv.target||pv.reps} reps</b>${pv.w?` at ${pv.w} lb`:""}</div>`:""}`}
+      h+=`</div>`;
+    }
+    h+=P.total?`<button class="big" id="main">${P.paused?"Resume":"Pause"}</button>`:`<button class="big" id="main">Set done</button>`;
+    h+=`<div class="row3"><button class="link" id="prev">‹ Back</button><span class="nextline">Next: <b>${esc((upcoming(P.i)||{ex:"Finish"}).ex)}</b></span>${P.total?`<button class="link" id="logn">Done ›</button>`:`<button class="link" id="skip">Skip ›</button>`}</div>`;
+  }else{
+    const last=P.log[P.log.length-1],pw=prevWork(P.i);
+    if(last&&pw&&last.ex===pw.ex){
+      const canW=weighted(last.ex),canR=last.reps!=null&&last.target;
+      h+=`<div class="card pad pick edit"><div class="logged" style="margin:0">${ICON.check}<span id="lgtxt">Logged <b>${esc(last.ex)}</b>${last.w?` · ${last.w} lb`:""}${last.reps!=null?` × ${last.reps}`:""}</span></div>`;
+      if(canW||canR){
+        h+=`<div class="pick" style="padding-top:4px"><span class="note" style="margin:0">Tap to fix this set if needed</span>`;
+        if(canW)h+=`<div class="lab"><span>Weight (lb)</span></div><div class="chips grid8" role="group" aria-label="Weight used on last set">${WEIGHTS.map(x=>`<button class="chip ewt" data-w="${x}" aria-pressed="${last.w===x}">${x}</button>`).join("")}</div>`;
+        if(canR)h+=`<div class="lab"><span>Reps done</span><span id="erlab">${last.reps}</span></div><div class="chips scroll" role="group" aria-label="Reps done on last set">${Array.from({length:last.target},(_,i)=>last.target-i).map(n=>`<button class="chip erp ${n<last.target?"short":""}" data-r="${n}" aria-pressed="${last.reps===n}">${n}</button>`).join("")}</div>`;
+        h+=`</div>`;
+      }
+      h+=`</div>`;
+    }
+    h+=`<div class="card timer"><span class="tag ${s.t==="prep"?"":"rest"}">${s.t==="prep"?"Get ready":s.kind==="round"?"Rest · end of round":s.kind==="move"?"Quick rest":"Rest"}</span>
+      ${ring(200,16,P.total?P.left/P.total:1,s.t==="prep"?"":"rest",`<b id="tv">${Math.ceil(P.left)}</b><span>${s.t==="prep"?"get set":"seconds"}</span>`)}
+      <div style="display:flex;gap:8px"><button class="sm sec" id="more">+15 s</button><button class="sm sec" id="skiprest">${s.t==="prep"?"Start now":"Skip rest"}</button><button class="sm sec" id="pause">${P.paused?"Resume":"Pause"}</button></div></div></div><div class="colB">`;
+    if(show){
+      const w=weighted(show.ex)?pickW(show.ex):null,L=lastInfo(show.ex),pic=IMG[show.ex];
+      h+=`<div class="card nextcard">${pic?`<div class="shot"><img src="${pic}" alt="${esc(show.ex)} start and finish"></div>`:`<div class="shot"></div>`}<div><span class="kick muted">Up next</span><h2>${esc(show.ex)}</h2><p>${esc(show.dur?show.dur+" s":show.reps+(/^\d+$/.test(show.reps)?" reps":""))}${show.circuit?` · round ${show.round}/${show.rounds}`:show.sets>1?` · set ${show.set}/${show.sets}`:""}</p>${weighted(show.ex)?`<div class="grab">${w?`Grab: ${w} lb`:"Pick your weight"}${L&&L.next?` <span class="up">· or ${L.next}</span>`:""}</div>`:""}</div></div>`;
+      if(SETUP[show.ex])h+=`<p class="note" style="margin:0">${esc(SETUP[show.ex])}</p>`;
+    }
+  }
+  h+=`</div></div>`;
+  $("#app").innerHTML=h;
+  $("#exit").onclick=home;
+  $$(".shot img").forEach(im=>{im.insertAdjacentHTML("afterend",`<div class="half" style="background-image:url('${im.src}')" aria-hidden="true"></div><div class="half r" style="background-image:url('${im.src}')" aria-hidden="true"></div>`);im.parentElement.onclick=()=>openPM()});
+  bindFS();
+  if(P.pm)drawPM();
+  const on=(id,fn)=>{const e=$(id);if(e)e.onclick=fn};
+  on("#main",main);on("#logn",logNow);on("#prev",()=>jump(-1));on("#skip",()=>jump(1));on("#more",addRest);on("#skiprest",()=>enter(P.i+1));on("#pause",()=>{P.paused=!P.paused;if(!P.paused)P.end=Date.now()+P.left*1000;else P.left=Math.max(0,(P.end-Date.now())/1000);render()});
+  $$(".chip.wt").forEach(b=>b.onclick=()=>{P.wsel[s.ex]=+b.dataset.w;saveRes();$$(".chip.wt").forEach(c=>c.setAttribute("aria-pressed",c===b))});
+  const lg=()=>{const l=P.log[P.log.length-1];const e=$("#lgtxt");if(e)e.innerHTML=`Logged <b>${esc(l.ex)}</b>${l.w?` · ${l.w} lb`:""}${l.reps!=null?` × ${l.reps}`:""}`;saveRes();savePartial()};
+  $$(".chip.ewt").forEach(b=>b.onclick=()=>{const l=P.log[P.log.length-1];l.w=+b.dataset.w;P.wsel[l.ex]=l.w;$$(".chip.ewt").forEach(c=>c.setAttribute("aria-pressed",c===b));lg();const g=$(".nextcard .grab");if(g&&upcoming(P.i)&&upcoming(P.i).ex===l.ex)g.textContent="Grab: "+l.w+" lb"});
+  $$(".chip.erp").forEach(b=>b.onclick=()=>{const l=P.log[P.log.length-1];l.reps=+b.dataset.r;$("#erlab").textContent=l.reps;$$(".chip.erp").forEach(c=>c.setAttribute("aria-pressed",c===b));lg()});
+  $$(".chip.rp").forEach(b=>b.onclick=()=>{P.rsel=+b.dataset.r;$("#rlab").textContent=P.rsel;$$(".chip.rp").forEach(c=>c.setAttribute("aria-pressed",c===b))});
+  paint();
+}
+function moveCard(s,tag,cls,sub){
+  const pic=s&&IMG[s.ex];
+  return `<div class="card move">${pic?`<div class="shot"><img src="${pic}" alt="${esc(s.ex)} start and finish positions"></div>`:""}<div class="body"><span class="tag ${cls}">${tag}</span><h1>${esc(s?s.ex:"")}</h1>${sub?`<p>${sub.startsWith("<b>")?sub:esc(sub)}</p>`:""}</div></div>`;
+}
+/* ---------- Whole-app full screen: bigger photos ---------- */
+let BIG=false;try{BIG=sessionStorage.getItem("ddt-big")==="1"}catch(e){}
+document.body.classList.toggle("fsmode",BIG);
+function setBig(on){BIG=on;document.body.classList.toggle("fsmode",on);try{sessionStorage.setItem("ddt-big",on?"1":"0")}catch(e){}
+  try{if(on){const el=document.documentElement;const r=(el.requestFullscreen||el.webkitRequestFullscreen);if(r)Promise.resolve(r.call(el)).then(()=>{try{screen.orientation.lock("landscape").catch(()=>{})}catch(e){}}).catch(()=>{})}
+      else if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
+  if(VIEW==="player")render();else if(VIEW==="home")home();window.scrollTo(0,0)}
+function bindFS(){$$("#fsapp").forEach(b=>b.onclick=()=>setBig(!BIG))}
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&BIG)setBig(false)});
+/* ---------- Photo mode: big picture over everything, timer keeps running ---------- */
+function openPM(){P.pm=true;drawPM();try{const el=document.documentElement;(el.requestFullscreen||el.webkitRequestFullscreen).call(el).then(()=>{try{screen.orientation.lock("landscape").catch(()=>{})}catch(e){}}).catch(()=>{})}catch(e){}}
+function closePM(){P.pm=false;const d=$("#pm");if(d)d.remove();try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){};try{screen.orientation.unlock()}catch(e){}}
+function drawPM(){
+  if(!P)return;const s=P.steps[P.i];if(!s){closePM();return}
+  const work=s.t==="work",show=work?s:upcoming(P.i);if(!show){closePM();return}
+  const pic=IMG[show.ex];
+  const status=!P.started?"Ready":work?(s.circuit?`Round ${s.round} of ${s.rounds}`:s.sets>1?`Set ${s.set} of ${s.sets}`:"Go"):(s.t==="prep"?"Get ready":"Rest · up next");
+  const amt=show.dur?show.dur+" s":show.reps+(/^\d+$/.test(show.reps)?" reps":"");
+  const w=weighted(show.ex)?pickW(show.ex):null;
+  const act=!P.started?"Start":work?(P.total?(P.paused?"Resume":"Pause"):"Set done"):(s.t==="prep"?"Start now":"Skip rest");
+  let d=$("#pm");if(!d){d=document.createElement("div");d.id="pm";d.className="pm";d.setAttribute("role","dialog");d.setAttribute("aria-label","Full screen photo");document.body.appendChild(d)}
+  d.className="pm"+(work?"":" resting");
+  d.innerHTML=`<div class="pmtop"><div class="pmname"><span>${status}</span><b>${esc(show.ex)}</b></div><div class="pmnum"><b id="pmt">${P.total&&P.started?Math.ceil(P.left):(work?esc(s.reps||""):"")}</b><span>${amt}${w?" · "+w+" lb":""}</span></div></div>
+    <div class="pmimg">${pic?`<img src="${pic}" alt="${esc(show.ex)} start and finish positions"><div class="pmhalf" style="background-image:url('${pic}')" aria-hidden="true"></div><div class="pmhalf r" style="background-image:url('${pic}')" aria-hidden="true"></div>`:`<p>No photo yet</p>`}</div>
+    <div class="pmbar"><button class="pmb sec" id="pmx">Exit full screen</button><button class="pmb" id="pma">${act}</button></div>`;
+  $("#pmx").onclick=closePM;
+  $("#pma").onclick=()=>{if(!P.started||work)main();else enter(P.i+1)};
+  paint();
+}
+function paint(){
+  const pmt=$("#pmt");
+  if(pmt&&P&&P.started&&P.total){const s=P.steps[P.i];if(s.t==="work"&&!s.dur){const ph=repPhase(s);pmt.textContent=ph.lead?"–":ph.rep+" / "+maxReps(s)}else pmt.textContent=Math.ceil(P.left)}
+  if(!P||!P.total||!P.started)return;
+  const rv=$("#rv"),tv=$("#tv");if(!rv||!tv)return;
+  const s=P.steps[P.i];
+  if(s.t==="work"&&!s.dur){const ph=repPhase(s),tl=$("#tl");tv.textContent=ph.lead?"–":ph.rep;if(tl)tl.textContent=ph.lead?"get set":`of ${maxReps(s)}${s.tp>=4?(ph.down?" · down":" · up"):""}`}
+  else tv.textContent=Math.ceil(P.left);
+  rv.style.strokeDashoffset=(+rv.dataset.c*(1-P.left/P.total)).toFixed(1);
+}
+
+/* ---------- Summary ---------- */
+function finish(){
+  stopAll();beep(1046,300);
+  const plan={};P.steps.forEach(s=>{if(s.t==="work")plan[s.ex]=(plan[s.ex]||0)+1});
+  const by={};P.log.forEach(l=>{const b=by[l.ex]=by[l.ex]||{n:0,short:false,ws:[],reps:[]};b.n++;if(l.target&&l.reps<l.target)b.short=true;if(l.w)b.ws.push(l.w);if(l.reps!=null)b.reps.push(l.reps)});
+  const ups=[],lines=[];
+  Object.keys(by).forEach(ex=>{const b=by[ex];const hit=b.n>=plan[ex]&&!b.short;
+    if(!b.ws.length){lines.push({ex,w:null,hit,reps:b.reps,n:b.n});return}
+    const w=b.ws[b.ws.length-1],prev=LAST[ex];
+    LAST[ex]={w,hit,reps:b.reps[b.reps.length-1]??null,date:Date.now()};saveLift(ex);
+    const n=hit?WEIGHTS.find(x=>x>w):null;if(n)ups.push({ex,w,n});
+    lines.push({ex,w,prev:prev&&prev.w,hit,reps:b.reps,n:b.n});
+  });
+  const vol=P.log.reduce((a,l)=>a+(l.w&&l.reps?l.w*l.reps:0),0),sets=P.log.length;
+  const now=Date.now();
+  clearTimeout(pTimer);P.done=true;upsertSess({...sessObj(false),date:now});
+  if(P.week){TR[P.week+"-"+P.d]=now;saveRound()}
+  VIEW="summary";
+  store("ddt-resume",null);
+  say(`Workout complete. ${sets} sets in ${Math.round(P.ms/60000)} minutes. Nice work.`);
+  window.scrollTo(0,0);
+  $("#app").innerHTML=`<div class="narrow"><div class="hello"><span>${P.week?"Week "+P.week+" · ":""}${DAYNAME[P.d]}</span><h1>${esc(P.w)}: done.</h1></div>
+    <div class="stats"><div class="card stat"><b>${clock(P.ms)}</b><span>Time</span></div><div class="card stat"><b>${sets}</b><span>Sets</span></div><div class="card stat"><b>${vol?vol.toLocaleString():"–"}</b><span>Pounds lifted</span></div></div>
+    <p class="note" style="margin:0">Pounds lifted is dumbbell weight × reps for each set you logged.</p>
+    ${ups.length?`<div class="card pad"><div class="sect" style="margin:0 0 6px">Go up next time</div><div class="list">${ups.map(u=>`<div class="li"><span>${esc(u.ex)}</span><span class="up">${u.w} → ${u.n} lb</span></div>`).join("")}</div></div>`:""}
+    ${lines.length?`<div class="card pad"><div class="sect" style="margin:0 0 6px">What you did</div><div class="list">${lines.map(l=>`<div class="li"><span>${esc(l.ex)}<small>${l.reps.length?"Reps: "+l.reps.join(", "):l.n+" set"+(l.n>1?"s":"")}${l.hit?"":" · short of target"}</small></span><span class="num">${l.w?(l.prev&&l.prev!==l.w?l.prev+" → ":"")+l.w+" lb":weighted(l.ex)?"No weight":l.reps.length?"Body":"Timed"}</span></div>`).join("")}</div></div>`:""}
+    <button class="big" id="back">Back to home</button></div>`;
+  $("#back").onclick=home;
+}
+home();
+connectDB();
+</script>
+
+</body></html>

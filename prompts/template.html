@@ -1,0 +1,189 @@
+<title>DIG DEEPER Move Prompts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: single column library. Sticky toolbar (collection tabs, format switch, search) over workout sections of move cards, each with a copy button. */
+:root{
+  --bg:#EDF0F2; --surface:#FFFFFF; --line:#D3D9DE; --ink:#13181D; --muted:#5B6670;
+  --plate:#C98A00; --plate-ink:#1A1300; --plate-soft:#F6E7C2; --rest:#2F7F86; --rest-soft:#D8ECEE;
+  --f-display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --f-num:"Barlow Condensed","Arial Narrow",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1317; --surface:#181D22; --line:#2A3138; --ink:#E7EBEE; --muted:#97A2AC;
+  --plate:#F2B705; --plate-ink:#1A1300; --plate-soft:#3A2F10; --rest:#5FC1C9; --rest-soft:#16343A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1317; --surface:#181D22; --line:#2A3138; --ink:#E7EBEE; --muted:#97A2AC;
+  --plate:#F2B705; --plate-ink:#1A1300; --plate-soft:#3A2F10; --rest:#5FC1C9; --rest-soft:#16343A; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+h1{font-family:var(--f-display);font-weight:800;font-size:2.3rem;line-height:1;text-transform:uppercase;margin:0;text-wrap:balance}
+.sub{color:var(--muted);margin:.4rem 0 0}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--plate);outline-offset:2px}
+.how{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:2px 14px}
+.how summary{cursor:pointer;padding:10px 0;font-weight:600}
+.how ol{margin:0 0 12px;padding-left:1.2rem;display:flex;flex-direction:column;gap:6px}
+.how li{color:var(--ink)}
+.how p{color:var(--muted);font-size:.9rem;margin:0 0 12px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)}
+.seg{display:grid;gap:4px;background:var(--line);padding:4px;border-radius:10px}
+.seg.c3{grid-template-columns:repeat(3,1fr)}.seg.c2{grid-template-columns:1fr 1fr}
+.seg button{border:0;background:transparent;border-radius:7px;padding:8px 4px;font-family:var(--f-num);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-size:.95rem}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
+.row{display:flex;gap:8px}
+#q{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.ghost{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:600;white-space:nowrap}
+section{margin-top:22px}
+.wh{display:flex;align-items:baseline;gap:10px;margin:0 0 10px}
+.wh .dow{font-family:var(--f-num);font-weight:700;color:var(--plate);letter-spacing:.06em;text-transform:uppercase}
+.wh h2{font-family:var(--f-display);font-weight:800;text-transform:uppercase;font-size:1.5rem;line-height:1.05;margin:0}
+.cards{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ch h3{margin:0;font-size:1.05rem;font-weight:600;min-width:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--f-num);font-weight:600;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--rest-soft);color:var(--ink)}
+.chip.ap{background:var(--plate-soft)}
+.copy{border:0;background:var(--plate);color:var(--plate-ink);border-radius:9px;padding:8px 14px;font-family:var(--f-num);font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.copy.ok{background:var(--rest);color:var(--bg)}
+.desc{margin:0;font-size:.93rem;color:var(--muted)}
+.desc b{color:var(--ink);font-weight:600}
+details.full summary{cursor:pointer;font-size:.85rem;color:var(--muted)}
+.ptxt{margin:8px 0 0;padding:10px;border-radius:8px;background:var(--bg);font-size:.85rem;white-space:pre-wrap;overflow-wrap:anywhere;user-select:all}
+.dayc{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--plate-soft);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.dayc div{min-width:0;display:flex;flex-direction:column}
+.dayc span{font-size:.85rem;color:var(--muted)}
+#dayfb{width:100%;min-height:200px;margin-top:12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:.85rem}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+.foot{color:var(--muted);font-size:.82rem;margin-top:28px}
+</style>
+
+<div class="wrap">
+  <h1>Dig Deeper Move Prompts</h1>
+  <p class="sub">Image prompts for all 124 moves in the program. Tap Copy and paste into ChatGPT, Gemini or any image generator.</p>
+  <details class="how" id="how">
+    <summary>How to get the same man in every picture</summary>
+    <ol>
+      <li>Open one chat and paste the first prompt.</li>
+      <li>Keep pasting the next prompts in that same chat. It will usually keep the same man and gym.</li>
+      <li>If he starts to change, upload your best image and add “Use the same man and gym as this photo.”</li>
+      <li>Check every picture before you trust it. If the back rounds, elbows flare, or a dumbbell looks wrong, ask it to fix that one thing.</li>
+    </ol>
+    <p>Moves marked “Best guess” are Shaun T's own exercises. Their descriptions come from a written review, so compare them with the BODi video if you can.</p>
+  </details>
+
+  <div class="bar">
+    <div class="seg c3" id="colls"></div>
+    <div class="row">
+      <div class="seg c2" id="fmt" style="flex:1">
+        <button data-f="two" aria-pressed="true">Start + finish</button>
+        <button data-f="one" aria-pressed="false">Single photo</button>
+      </div>
+    </div>
+    <div class="row"><input id="q" type="search" placeholder="Search moves" aria-label="Search moves"></div>
+  </div>
+  <textarea id="dayfb" hidden readonly aria-label="Whole-day prompt"></textarea>
+  <div id="list"></div>
+  <p class="foot">Holds like planks always come out as a single photo. Saturday cardio is left out since it has no weights.</p>
+</div>
+
+<script>
+const {W,M}=/*DATA*/;
+const COLL=[["C1 Dynamic Circuits","C1 Circuits"],["C2 Sculpt & Define","C2 Sculpt"],["C3 The Build","C3 Build"]];
+let coll=0,fmt="two";
+try{coll=+(localStorage.getItem("ddp-coll")||0);fmt=localStorage.getItem("ddp-fmt")||"two"}catch(e){}
+
+const STYLE="The man: athletic, early 30s, short dark hair, short trimmed beard, fitted plain black t-shirt, knee-length charcoal shorts, white sneakers. The setting: a bright, clean home gym with a light gray wall, black rubber floor, an adjustable bench and a set of black hex dumbbells. Soft, even studio lighting, full body in frame, sharp focus.";
+const FORM="Textbook-correct, safe form: neutral spine, braced core, shoulders down and back, controlled movement. Anatomically correct hands, fingers and joints; dumbbells solid and properly gripped.";
+
+function prompt(name){
+  const [view,setup,start,finish]=M[name];
+  const hold=start===null;
+  if(fmt==="two"&&!hold){
+    return `Photorealistic fitness instruction image: two side-by-side panels showing the same man doing the ${name}, ${view}.\n\nSetup: ${setup}\n\nLeft panel, labeled "START": ${start}\n\nRight panel, labeled "FINISH": ${finish}\n\n${STYLE} The man, gym and camera angle are identical in both panels.\n\n${FORM} No logos or watermark; the only text is the two panel labels.`;
+  }
+  const moment=hold?finish:finish;
+  return `Photorealistic fitness instruction photo of a man doing the ${name}, ${view}.\n\nSetup: ${setup}\n\n${hold?"Shown holding the position":"Shown at this point of the rep"}: ${moment}\n\n${STYLE}\n\n${FORM} No text, logos or watermark in the image.`;
+}
+// first workout (in program order) where each move appears
+const FIRST={};W.forEach((w,i)=>w.m.forEach(m=>{if(!(m in FIRST))FIRST[m]=i}));
+function newMoves(wi){return W[wi].m.filter(m=>FIRST[m]===wi)}
+function dayPrompt(wi){
+  const w=W[wi], ms=newMoves(wi), reused=W[wi].m.filter(m=>FIRST[m]!==wi);
+  const lines=ms.map((m,i)=>{const [view,setup,start,finish]=M[m];
+    return start===null
+      ? `${i+1}. ${m} (${view}, SINGLE PHOTO of the hold)\n   Setup: ${setup}\n   Hold: ${finish}`
+      : `${i+1}. ${m} (${view})\n   Setup: ${setup}\n   START: ${start}\n   FINISH: ${finish}`}).join("\n\n");
+  return `I'm making exercise demo pictures for my home workout (${w.w}). Make a separate, full-size image for each of the ${ms.length} moves listed below, in order. One image per message.
+
+RULES FOR EVERY IMAGE
+- Landscape, 3:2, photorealistic.
+- Two side-by-side panels: left panel labeled "START", right panel labeled "FINISH". Moves marked SINGLE PHOTO get one photo with no labels.
+- ${STYLE}
+- The same man, outfit, gym and lighting in every image, so they look like one photo shoot. Same camera angle in both panels.
+- ${FORM}
+- No logos or watermark. The only text is the START and FINISH labels.
+
+HOW WE'LL WORK
+Make image 1 now. After each image, stop and wait for me.
+- When I type "next", make the next image on the list.
+- When I type "fix:" plus a change, redo the last image with only that change and keep everything else the same.
+Don't combine moves into one image, and don't skip any.
+
+THE MOVES
+
+${lines}`;
+}
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const slug=t=>t.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+
+function where(name){return W.filter(w=>w.m.includes(name)).map(w=>w.c.slice(0,2)+" "+w.d)}
+
+function draw(){
+  document.querySelectorAll("#colls button").forEach((b,i)=>b.setAttribute("aria-pressed",i===coll));
+  document.querySelectorAll("#fmt button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===fmt));
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const ws=q?W:W.filter(w=>w.c===COLL[coll][0]);
+  let html="",n=0;
+  ws.forEach(w=>{
+    const ms=w.m.filter(m=>!q||m.toLowerCase().includes(q));
+    if(!ms.length)return;
+    const wi=W.indexOf(w), nm=newMoves(wi).length, rep=w.m.length-nm;
+    html+=`<section><div class="wh"><span class="dow">${q?w.c.slice(0,2)+" ":""}${w.d}</span><h2>${esc(w.w)}</h2></div>`;
+    if(!q) html+=`<div class="dayc"><div><b>Whole day in one prompt</b><span>${nm} new image${nm===1?"":"s"}${rep?` · ${rep} repeat${rep===1?"":"s"} skipped, already made on an earlier day`:""}</span></div><button class="copy" data-day="${wi}">Copy whole day</button></div>`;
+    html+=`<div class="cards">`;
+    ms.forEach(m=>{
+      n++;const [view,setup,start,finish,ap]=M[m];const hold=start===null;
+      const others=where(m).filter(x=>x!==w.c.slice(0,2)+" "+w.d);
+      const id=slug(w.c+w.d+m);
+      html+=`<article class="card">
+        <div class="ch"><h3>${esc(m)}</h3><button class="copy" data-m="${esc(m)}" id="b-${id}">Copy</button></div>
+        <div class="chips"><span class="chip">${esc(view)}</span>${hold?'<span class="chip">Hold</span>':""}${ap?'<span class="chip ap">Best guess</span>':""}${others.length?`<span class="chip">Also ${esc(others.join(", "))}</span>`:""}</div>
+        <p class="desc">${hold?`<b>Hold:</b> ${esc(finish)}`:`<b>Start:</b> ${esc(start)} <b>Finish:</b> ${esc(finish)}`}</p>
+        <details class="full"><summary>See full prompt</summary><div class="ptxt" id="p-${id}">${esc(prompt(m))}</div></details>
+      </article>`;
+    });
+    html+=`</div></section>`;
+  });
+  document.getElementById("list").innerHTML=html||`<p class="empty">No moves match “${esc(q)}”.</p>`;
+  document.querySelectorAll(".copy").forEach(b=>b.onclick=()=>copy(b));
+}
+function copy(b){
+  const text=b.dataset.day!==undefined?dayPrompt(+b.dataset.day):prompt(b.dataset.m);
+  const label=b.textContent;
+  const done=()=>{b.textContent="Copied";b.classList.add("ok");setTimeout(()=>{b.textContent=label;b.classList.remove("ok")},1600)};
+  const fallback=()=>{if(b.dataset.day!==undefined){const t=document.getElementById("dayfb");t.value=text;t.hidden=false;t.focus();t.select();b.textContent="Selected below";setTimeout(()=>b.textContent="Copy whole day",2500);return}
+    const p=b.closest(".card").querySelector(".ptxt");const d=p.closest("details");d.open=true;const r=document.createRange();r.selectNodeContents(p);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Selected";setTimeout(()=>b.textContent="Copy",2000)};
+  try{navigator.clipboard.writeText(text).then(done,fallback)}catch(e){fallback()}
+}
+document.getElementById("colls").innerHTML=COLL.map((c,i)=>`<button data-i="${i}">${c[1]}</button>`).join("");
+document.querySelectorAll("#colls button").forEach(b=>b.onclick=()=>{coll=+b.dataset.i;document.getElementById("q").value="";try{localStorage.setItem("ddp-coll",coll)}catch(e){};draw();scrollTo({top:0})});
+document.querySelectorAll("#fmt button").forEach(b=>b.onclick=()=>{fmt=b.dataset.f;try{localStorage.setItem("ddp-fmt",fmt)}catch(e){};draw()});
+document.getElementById("q").oninput=draw;
+draw();
+</script>
