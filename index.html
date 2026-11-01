@@ -264,7 +264,7 @@ body.fsmode .move h1{font-size:1.5rem}
 button.li.mv{width:100%;background:none;border:0;border-top:1px solid var(--line);text-align:left;font:inherit;color:inherit;cursor:pointer}
 button.li.mv .num::after{content:"›";margin-left:8px;font-size:1.2rem;color:var(--muted)}
 .rv{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}
-.rvs{background:var(--bg);width:100%;max-width:620px;max-height:94vh;overflow:auto;border-radius:26px 26px 0 0;padding:0 0 max(18px,env(safe-area-inset-bottom,0px))}
+.rvs{position:relative;background:var(--bg);width:100%;max-width:620px;max-height:94vh;overflow:auto;border-radius:26px 26px 0 0;padding:0 0 max(18px,env(safe-area-inset-bottom,0px))}
 @media (min-width:700px){.rv{align-items:center}.rvs{border-radius:26px}}
 .rvs .shot{aspect-ratio:3/2;background:#12100E;border-radius:26px 26px 0 0;overflow:hidden;cursor:zoom-in}
 .rvs .shot img{width:100%;height:100%;object-fit:contain;display:block}
@@ -615,7 +615,7 @@ function home(){
     <div id="nrbox" style="display:flex;flex-direction:column;gap:8px;padding-bottom:12px">
       <button class="sm sec" id="newround" style="width:100%">Start a new 12-week round</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:16px"><button class="sm sec" id="bk" style="width:100%">Download backup (CSV)</button><button class="sm sec" id="reintro" style="width:100%;margin-top:8px">Redo the intro</button><span class="note" id="bkmsg">Every set you've logged, in a spreadsheet file.</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:16px"><button class="sm sec" id="bk" style="width:100%">Download backup (CSV)</button><button class="sm sec" id="reintro" style="width:100%;margin-top:8px">Redo the intro</button><button class="sm sec" id="wipe" style="width:100%;margin-top:8px;color:#B42318">Delete my data and reset</button><span class="note" id="bkmsg">Every set you've logged, in a spreadsheet file.</span></div>
   </details>
   <p class="note">Lineups are based on a full-program review, not BODi's official worksheets.</p></div></div>`;
   $("#app").innerHTML=h;
@@ -624,6 +624,7 @@ function home(){
   $$(".cell").forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(TR[k])delete TR[k];else TR[k]=Date.now();saveRound();home();$("#trk").open=true});
   fillVoices();
   const ri=$("#reintro");if(ri)ri.onclick=()=>{store("ddt-onboarded",null);intro()};
+  const wp=$("#wipe");if(wp)wp.onclick=askWipe;
   const tv=$("#testv");if(tv)tv.onclick=()=>say("Next, shoulder press. Grab the 25s.",true,S.describe!=="off"?spoken("Shoulder Press"):"");
   $$("#sets select").forEach(s=>s.onchange=()=>{const v=s.value;S[s.id]=s.id==="voiceName"?v:(isNaN(+v)?v:+v);store("ddt-settings",S);home();$("#sets").open=true});
   const g=$("#gonext");if(g)g.onclick=()=>start(COLL[collOfWeek(nx.w)].k,nx.d,nx.w);
@@ -1027,6 +1028,33 @@ async function hrBackfill(){
   let changed=false;
   for(const s of want){const hr=await readHR(s.date-s.ms,s.date);s.hrTries=(s.hrTries||0)+1;if(hr){const {pts,...keep}=hr;s.hr=keep;changed=true}upsertSess(s)}
   if(changed&&VIEW==="home"){const op=[...$$("details[open]")].map(d=>d.id);home();op.forEach(id=>{const d=id&&document.getElementById(id);if(d)d.open=true})}
+}
+/* ---------- Delete data and reset (photos stay) ---------- */
+const KEEP_ON_RESET=["ddt-photos","ddt-photobase"];
+function askWipe(){
+  closeReview();
+  const el=document.createElement("div");el.className="rv";el.id="rv";
+  el.innerHTML=`<div class="rvs" role="dialog" aria-modal="true" aria-label="Delete my data and reset" style="padding:22px 18px max(18px,env(safe-area-inset-bottom,0px))">
+    <button class="rvx" id="rvx" aria-label="Close" style="right:0;top:0">×</button>
+    <div class="rvb" style="padding:0">
+      <h2>Delete everything and start fresh?</h2>
+      <p>This erases every workout you've logged, your weights, body stats, the 12-week tracker and your settings on this phone. The app restarts at the intro.</p>
+      <p class="muted"><b>Kept:</b> your saved move photos, so nothing re-downloads. Anything already sent to Health Connect stays there.</p>
+      <button class="sm sec" id="wbk" style="width:100%;background:var(--card);margin-top:28px">Download a backup first</button><span class="note" id="bkmsg" style="margin:0"></span>
+      <label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" id="wok" style="width:22px;height:22px;accent-color:#B42318">I understand this can't be undone</label>
+      <button class="big" id="wgo" disabled style="background:#B42318;color:#fff;opacity:.45">Delete and reset</button>
+    </div></div>`;
+  document.body.appendChild(el);
+  el.onclick=e=>{if(e.target===el)closeReview()};
+  $("#rvx").onclick=closeReview;
+  $("#wbk").onclick=backup;
+  $("#wok").onchange=()=>{const on=$("#wok").checked;$("#wgo").disabled=!on;$("#wgo").style.opacity=on?1:.45};
+  $("#wgo").onclick=wipeAll;
+}
+function wipeAll(){
+  try{stopAll()}catch(e){}
+  try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("ddt-")&&!KEEP_ON_RESET.includes(k))ks.push(k)}ks.forEach(k=>localStorage.removeItem(k))}catch(e){}
+  location.reload();
 }
 /* ---------- Review a move before starting ---------- */
 function openReview(i){
