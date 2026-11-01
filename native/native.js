@@ -8,13 +8,31 @@ import { FileOpener } from '@capawesome-team/capacitor-file-opener';
 
 if (Capacitor.isNativePlatform()) {
 
+// ---------- Workout session: lock-screen/watch notification, background ticks, music ducking ----------
+const WS = registerPlugin('WorkoutSession');
+const wsSubs = { action: [], tick: [] };
+WS.addListener('action', d => wsSubs.action.forEach(f => { try { f(d); } catch (e) {} }));
+WS.addListener('tick', () => wsSubs.tick.forEach(f => { try { f(); } catch (e) {} }));
+window.__session = {
+  start: o => WS.start(o),
+  update: o => WS.update(o),
+  stop: () => WS.stop(),
+  askNotifications: () => WS.requestNotifications(),
+  onAction: f => wsSubs.action.push(f),
+  onTick: f => wsSubs.tick.push(f)
+};
+
 // Voice: the Android WebView has no speechSynthesis, so speak through Android's own text-to-speech.
 // Android's plugin never reports back when a phrase is cut off, so each phrase also gets a time limit,
 // and cancelling clears everything at once. Without this the voice went silent after the first interruption.
 let queue = [], speaking = false, list = [], gen = 0;
+let duckT = null;
+function duckOn() { clearTimeout(duckT); if (!ducked) { ducked = true; WS.duck().catch(() => {}); } }
+function duckOffSoon() { clearTimeout(duckT); duckT = setTimeout(() => { if (!speaking && ducked) { ducked = false; WS.unduck().catch(() => {}); } }, 600); }
+let ducked = false;
 function next() {
-  if (!queue.length) { speaking = false; return; }
-  speaking = true;
+  if (!queue.length) { speaking = false; duckOffSoon(); return; }
+  speaking = true; duckOn();
   const my = gen, u = queue.shift();
   let done = false;
   const finish = () => {
@@ -34,7 +52,7 @@ const synth = {
   onvoiceschanged: null,
   getVoices() { return list; },
   speak(u) { queue.push(u); if (!speaking) next(); },
-  cancel() { gen++; queue = []; speaking = false; TextToSpeech.stop().catch(() => {}); },
+  cancel() { gen++; queue = []; speaking = false; TextToSpeech.stop().catch(() => {}); duckOffSoon(); },
   pause() {}, resume() {}
 };
 Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
@@ -52,6 +70,7 @@ window.__hc = {
   saveWorkout: o => HC.saveWorkout(o),
   saveWeight: o => HC.saveWeight(o),
   readWeights: o => HC.readWeights(o),
+  readHeartRate: o => HC.readHeartRate(o),
   openSettings: () => HC.openSettings(),
   install: () => HC.install()
 };
