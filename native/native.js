@@ -18,6 +18,7 @@ window.__session = {
   update: o => WS.update(o),
   stop: () => WS.stop(),
   askNotifications: () => WS.requestNotifications(),
+  watch: o => WS.watch(o),
   test: () => WS.requestNotifications().then(() => WS.test()),
   onAction: f => wsSubs.action.push(f),
   onTick: f => wsSubs.tick.push(f)
@@ -167,7 +168,7 @@ App.addListener('backButton', () => {
       if (!res.ok) return;
       const rel = await res.json();
       const n = parseInt(String(rel.tag_name || '').split('.').pop(), 10);
-      const asset = (rel.assets || []).find(a => /\.apk$/.test(a.name));
+      const asset = (rel.assets || []).find(a => a.name === 'dig-deeper-timer.apk') || (rel.assets || []).find(a => /\.apk$/.test(a.name) && !/watch/.test(a.name));
       if (asset && n > parseInt(info.build, 10)) { update = { n, url: asset.browser_download_url, name: rel.tag_name }; banner(); }
     } catch (e) {}
   }

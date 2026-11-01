@@ -1000,14 +1000,27 @@ function sessionState(){
     if(lp)return{title:s.t==="prep"?"Get ready":"Rest",text:text+" · Logged "+lp,endsAt,actions:acts,wear}}
   return{title:s.t==="prep"?"Get ready":"Rest",text,endsAt,actions:acts,wear};
 }
+function watchState(){
+  const s=P.steps[P.i];if(!s)return{mode:"idle"};
+  const endsAt=P.total&&!P.paused?Math.round(P.end):0,key=P.sid+":"+P.i;
+  if(s.t==="work"){const max=maxReps(s);
+    const tag=s.circuit?`Round ${s.round} of ${s.rounds}`:(s.sets>1?`Set ${s.set} of ${s.sets}`:"Go");
+    const target=s.dur?(s.dur>=120?Math.round(s.dur/60)+" min":s.dur+" s"):max+" reps";
+    return{mode:"work",key,kicker:tag,title:s.ex,sub:"Target "+target,endsAt,paused:!!P.paused,weighted:weighted(s.ex),w:weighted(s.ex)?pickW(s.ex):null,hasReps:!!max,reps:max?(P.rsel??max):0}}
+  const n=upcoming(P.i),w=n&&weighted(n.ex)?pickW(n.ex):null,l=P.log[P.log.length-1];
+  return{mode:s.t==="prep"?"prep":"rest",key,kicker:s.t==="prep"?"Get ready":s.kind==="round"?"Rest · end of round":"Rest",title:n?"Next: "+n.ex:"Last one done",sub:w?`Grab ${w} lb`:"",endsAt,paused:!!P.paused,
+    hasLast:!!l,lastName:l?l.ex:"",lastWeighted:!!(l&&weighted(l.ex)),lastW:l?l.w:null,lastHasReps:!!(l&&l.reps!=null),lastReps:l&&l.reps!=null?l.reps:0};
+}
+function watchSend(o){if(window.__session&&window.__session.watch)window.__session.watch(o).catch(()=>{})}
 function sessionSync(){
   if(!window.__session||!P||!P.started||P.done)return;
   const st=sessionState();if(!st)return;
   st.alert=!!P._alert;P._alert=false;
   if(!SESSION_ON){SESSION_ON=true;window.__session.askNotifications().catch(()=>{}).then(()=>window.__session.start(st)).catch(()=>{SESSION_ON=false})}
   else window.__session.update(st).catch(()=>{});
+  watchSend(watchState());
 }
-function sessionStop(){if(SESSION_ON&&window.__session){SESSION_ON=false;window.__session.stop().catch(()=>{})}}
+function sessionStop(){if(SESSION_ON&&window.__session){SESSION_ON=false;window.__session.stop().catch(()=>{});watchSend(P&&P.done?{mode:"done",key:"done",sub:`Workout complete. ${P.log.length} sets in ${Math.round(P.ms/60000)} min.`}:{mode:"idle",key:"idle"})}}
 /* "25 12", "25 lb × 12", "25 by 12", "2512", or just "12" */
 const NUMW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fourty:40,fifty:50};
 /* "twenty five by twelve" -> "25 by 12" */
@@ -1329,7 +1342,7 @@ function finish(){
   $("#back").onclick=home;
 }
 {const _r=render;render=function(){_r();sessionSync();syncSend()}}
-{const _f=finish;finish=function(){const was=P&&P.done;_f();if(!was&&!SYNC.adopting&&syncOn()){P.v=nextV();syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()})}}}
+{const _f=finish;finish=function(){const was=P&&P.done;_f();if(P&&P.done)watchSend({mode:"done",key:"done:"+P.sid,sub:`Workout complete. ${P.log.length} sets in ${Math.round(P.ms/60000)} min.`});if(!was&&!SYNC.adopting&&syncOn()){P.v=nextV();syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()})}}}
 home();
 connectDB();
 syncStart();

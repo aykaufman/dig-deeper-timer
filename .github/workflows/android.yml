@@ -47,6 +47,13 @@ jobs:
       - name: Build the APK
         run: cd build/android && ./gradlew assembleRelease --no-daemon
 
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build the watch app
+        run: gradle -p wear assembleRelease -PddtVersionCode=${{ github.run_number }} --no-daemon
+
       - name: Sign the APK
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
@@ -57,6 +64,8 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BT/zipalign" -p -f 4 build/android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
           "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.keystore" --ks-pass env:KS_PASS --key-pass env:KS_PASS --out dig-deeper-timer.apk aligned.apk
+          "$BT/zipalign" -p -f 4 wear/app/build/outputs/apk/release/app-release-unsigned.apk watch-aligned.apk
+          "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.keystore" --ks-pass env:KS_PASS --key-pass env:KS_PASS --out dig-deeper-watch.apk watch-aligned.apk
           rm -f "$RUNNER_TEMP/release.keystore"
           ls -lh dig-deeper-timer.apk
 
@@ -66,6 +75,8 @@ jobs:
         with:
           tag_name: v1.${{ github.run_number }}
           name: Dig Deeper v1.${{ github.run_number }}
-          body: "Android app. Download dig-deeper-timer.apk on your phone and open it to install or update."
-          files: dig-deeper-timer.apk
+          body: "Phone app: dig-deeper-timer.apk (install on the phone). Watch app: dig-deeper-watch.apk (install on the Galaxy Watch with Wear Installer 2)."
+          files: |
+            dig-deeper-timer.apk
+            dig-deeper-watch.apk
           make_latest: true

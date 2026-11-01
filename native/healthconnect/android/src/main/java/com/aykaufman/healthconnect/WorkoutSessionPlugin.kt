@@ -17,6 +17,9 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
 import com.getcapacitor.annotation.PermissionCallback
 import org.json.JSONObject
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
 
 @CapacitorPlugin(
     name = "WorkoutSession",
@@ -37,9 +40,36 @@ class WorkoutSessionPlugin : Plugin() {
 
     private var focus: AudioFocusRequest? = null
 
+    // buttons pressed in the watch app arrive here
+    private val watchListener = MessageClient.OnMessageReceivedListener { ev ->
+        if (ev.path == "/ddt/action") {
+            val s = String(ev.data)
+            val i = s.indexOf('|')
+            emitAction(if (i < 0) s else s.substring(0, i), if (i < 0) null else s.substring(i + 1))
+        }
+    }
+
     override fun load() {
         instance = this
         WorkoutService.tickListener = { instance?.emit("tick", JSObject()) }
+        try { Wearable.getMessageClient(context).addListener(watchListener) } catch (e: Exception) {}
+    }
+
+    override fun handleOnDestroy() {
+        try { Wearable.getMessageClient(context).removeListener(watchListener) } catch (e: Exception) {}
+        super.handleOnDestroy()
+    }
+
+    /** Sends the current step to the watch app. */
+    @PluginMethod
+    fun watch(call: PluginCall) {
+        try {
+            val req = PutDataMapRequest.create("/ddt/state")
+            req.dataMap.putString("json", call.data.toString())
+            req.dataMap.putLong("ts", System.currentTimeMillis())
+            Wearable.getDataClient(context).putDataItem(req.asPutDataRequest().setUrgent())
+        } catch (e: Exception) {}
+        call.resolve()
     }
 
     fun emit(name: String, data: JSObject) {
