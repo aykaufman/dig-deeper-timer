@@ -866,7 +866,7 @@ function logNow(){logSet(P.steps[P.i]);enter(P.i+1)}
 function jump(d){if(!P.started)begin();let j=P.i+d;
   if(d<0){while(j>0&&P.steps[j].t!=="work")j--}else{while(j<P.steps.length&&P.steps[j].t!=="work")j++}
   enter(Math.max(0,j))}
-function addRest(){P.end+=15000;P.left+=15;P.total+=15;paint()}
+function addRest(){P.end+=15000;P.left+=15;P.total+=15;paint();syncSend()}
 
 function render(){
   VIEW="player";
@@ -1101,8 +1101,12 @@ function syncLabel(){if(!S.syncCode)return"";const n=SYNC.conns.filter(c=>c.open
   return n?`Connected to ${n} other device${n>1?"s":""}. Workouts now run on both.`:(S.syncRole==="host"?"Waiting for the other device to enter this code…":"Looking for the other device… make sure the app is open there.")}
 function syncSendRaw(m){SYNC.conns.forEach(c=>{try{if(c.open)c.send(m)}catch(e){}})}
 function snapOf(){return{c:P.c,d:P.d,week:P.week,sid:P.sid,t0:P.t0,i:P.i,paused:P.paused,left:P.paused||!P.total?P.left:Math.max(0,(P.end-Date.now())/1000),total:P.total,started:P.started,log:P.log,wsel:P.wsel,rsel:P.rsel,ms:P.ms,done:!!P.done,v:P.v||0}}
-function syncSend(){if(!syncOn()||SYNC.adopting||!P)return;P.v=(P.v||0)+1;syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()})}
-function claimSpeaker(){if(!syncOn()||SYNC.speaker===SYNC.me)return;SYNC.speaker=SYNC.me;syncSendRaw({t:"speaker",id:SYNC.me})}
+const nextV=()=>Math.max((P.v||0)+1,Date.now());
+function syncSend(){if(!syncOn()||SYNC.adopting||!P)return;P.v=nextV();syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()})}
+function claimSpeaker(){if(!syncOn()||SYNC.speaker===SYNC.me)return;SYNC.speaker=SYNC.me;SYNC.st=Date.now();syncSendRaw({t:"speaker",id:SYNC.me})}
+function syncPing(){if(!syncOn())return;const live=!!(P&&P.started&&!P.done);syncSendRaw({t:"ping",from:SYNC.me,sid:P?P.sid:null,v:P?P.v||0:0,live,speaker:SYNC.speaker,st:SYNC.st||0})}
+setInterval(()=>{const now=Date.now();SYNC.conns.forEach(c=>{if(c.open&&c._last&&now-c._last>10000){try{c.close()}catch(e){}}});syncPing()},2500);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState!=="visible"||!S.syncCode)return;if(syncOn())syncPing();else syncRetry(0)});
 function adopt(sn){
   SYNC.adopting=true;
   try{
@@ -1119,17 +1123,23 @@ function adopt(sn){
 }
 function onSyncMsg(m){
   if(!m||m.from===SYNC.me&&m.t!=="speaker")return;
-  if(m.t==="speaker"){SYNC.speaker=m.id;if(m.id!==SYNC.me){try{speechSynthesis.cancel()}catch(e){}}return}
+  if(m.t==="ping"){const live=P&&P.started&&!P.done;
+    if(live&&(m.sid!==P.sid||(m.v||0)<(P.v||0)))syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()});
+    else if(m.live&&(!P||m.sid!==P.sid||(m.v||0)>(P.v||0)))syncSendRaw({t:"need",from:SYNC.me});
+    if(m.speaker&&m.speaker!==SYNC.speaker&&m.st>(SYNC.st||0)){SYNC.speaker=m.speaker;SYNC.st=m.st}
+    return}
+  if(m.t==="need"){if(P&&P.started&&!P.done)syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()});return}
+  if(m.t==="speaker"){SYNC.speaker=m.id;SYNC.st=Date.now();if(m.id!==SYNC.me){try{speechSynthesis.cancel()}catch(e){}}return}
   if(m.t==="hello"){if(P&&P.started&&!P.done)syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()});if(m.speaker&&!SYNC.speaker)SYNC.speaker=m.speaker;return}
   if(m.t==="state"&&m.snap){const sn=m.snap;
     if(!P||P.sid!==sn.sid||sn.v>(P.v||0)||(sn.v===(P.v||0)&&m.from>SYNC.me))adopt(sn)}
 }
 function attachConn(c){
-  c.on("open",()=>{SYNC.conns=SYNC.conns.filter(x=>x.open&&x!==c).concat(c);
+  c.on("open",()=>{c._last=Date.now();SYNC.conns=SYNC.conns.filter(x=>x.open&&x!==c).concat(c);
     if(!SYNC.speaker&&P&&P.started)SYNC.speaker=SYNC.me;
     c.send({t:"hello",from:SYNC.me,speaker:SYNC.speaker});if(P&&P.started&&!P.done)c.send({t:"state",from:SYNC.me,snap:snapOf()});
     syncPaint();toast("Live sync connected")});
-  c.on("data",onSyncMsg);
+  c._last=Date.now();c.on("data",m=>{c._last=Date.now();onSyncMsg(m)});
   const gone=()=>{SYNC.conns=SYNC.conns.filter(x=>x!==c);syncPaint();if(S.syncRole==="join")syncRetry(4000)};
   c.on("close",gone);c.on("error",gone);
 }
@@ -1297,7 +1307,7 @@ function finish(){
   $("#back").onclick=home;
 }
 {const _r=render;render=function(){_r();sessionSync();syncSend()}}
-{const _f=finish;finish=function(){const was=P&&P.done;_f();if(!was&&!SYNC.adopting&&syncOn()){P.v=(P.v||0)+1;syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()})}}}
+{const _f=finish;finish=function(){const was=P&&P.done;_f();if(!was&&!SYNC.adopting&&syncOn()){P.v=nextV();syncSendRaw({t:"state",from:SYNC.me,snap:snapOf()})}}}
 home();
 connectDB();
 syncStart();
