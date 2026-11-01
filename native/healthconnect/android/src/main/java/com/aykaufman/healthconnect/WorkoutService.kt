@@ -64,6 +64,24 @@ class WorkoutService : Service() {
                 .setContentIntent(openApp(ctx))
                 .build()
 
+        private fun makeAction(ctx: Context, a: JSONObject): NotificationCompat.Action {
+            val id = a.optString("id")
+            val label = a.optString("label", id)
+            val hint = a.optString("input", "")
+            val intent = Intent(ctx, ActionReceiver::class.java).setAction("com.aykaufman.ddt.$id")
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                (if (hint.isNotEmpty()) PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE)
+            val pi = PendingIntent.getBroadcast(ctx, 1000 + (id.hashCode() and 0xffff), intent, flags)
+            val ab = NotificationCompat.Action.Builder(0, label, pi)
+            if (hint.isNotEmpty()) {
+                val rb = RemoteInput.Builder(INPUT_KEY).setLabel(hint)
+                val ch = a.optJSONArray("choices")
+                if (ch != null && ch.length() > 0) rb.setChoices(Array<CharSequence>(ch.length()) { ch.optString(it) })
+                ab.addRemoteInput(rb.build()).setAllowGeneratedReplies(false)
+            }
+            return ab.build()
+        }
+
         private fun liveNotification(ctx: Context, alert: Boolean): Notification {
             val s = state
             val endsAt = s.optLong("endsAt", 0L)
@@ -85,31 +103,10 @@ class WorkoutService : Service() {
                 b.setShowWhen(false)
             }
             val wear = NotificationCompat.WearableExtender()
-            val actions = s.optJSONArray("actions")
-            if (actions != null) {
-                for (k in 0 until actions.length()) {
-                    val a = actions.optJSONObject(k) ?: continue
-                    val id = a.optString("id")
-                    val label = a.optString("label", id)
-                    val hint = a.optString("input", "")
-                    val intent = Intent(ctx, ActionReceiver::class.java).setAction("com.aykaufman.ddt.$id")
-                    val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-                        (if (hint.isNotEmpty()) PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE)
-                    val pi = PendingIntent.getBroadcast(ctx, 100 + k + id.hashCode() % 1000, intent, flags)
-                    val ab = NotificationCompat.Action.Builder(0, label, pi)
-                    if (hint.isNotEmpty()) {
-                        val rb = RemoteInput.Builder(INPUT_KEY).setLabel(hint)
-                        val ch = a.optJSONArray("choices")
-                        if (ch != null && ch.length() > 0) {
-                            rb.setChoices(Array<CharSequence>(ch.length()) { ch.optString(it) })
-                        }
-                        ab.addRemoteInput(rb.build()).setAllowGeneratedReplies(false)
-                    }
-                    val built = ab.build()
-                    b.addAction(built)
-                    wear.addAction(built)
-                }
-            }
+            val phoneActs = s.optJSONArray("actions")
+            val wearActs = s.optJSONArray("wear") ?: phoneActs
+            if (phoneActs != null) for (k in 0 until phoneActs.length()) phoneActs.optJSONObject(k)?.let { b.addAction(makeAction(ctx, it)) }
+            if (wearActs != null) for (k in 0 until wearActs.length()) wearActs.optJSONObject(k)?.let { wear.addAction(makeAction(ctx, it)) }
             b.extend(wear)
             return b.build()
         }

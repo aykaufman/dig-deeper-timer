@@ -979,14 +979,26 @@ function sessionState(){
       acts.push({id:"log",label:"Log",input:max?(weighted(s.ex)?"Weight and reps, like 25 12":"Reps done"):"Weight used",choices:ch.filter(Boolean).filter(c=>weighted(s.ex)||!/lb/.test(c)).concat(!weighted(s.ex)&&max?[max,max-1,max-2].filter(n=>n>0).map(String):[])});
     }
     acts.push(pause);
-    return{title:s.ex,text,endsAt,actions:acts};
+    const rs=max?(P.rsel??max):null,pick=[w?w+" lb":null,rs!=null?rs+" reps":null].filter(Boolean).join(" × ");
+    const wear=[{id:"done",label:pick?"✓ Done · "+pick:"✓ Done"}];
+    if(max)wear.push({id:"repDown",label:"Reps −1"},{id:"repUp",label:"Reps +1"});
+    if(weighted(s.ex))wear.push({id:"wDown",label:"Lighter"},{id:"wUp",label:"Heavier"});
+    const lg=acts.find(a=>a.id==="log");if(lg)wear.push({...lg,label:"Say or type it"});
+    wear.push(pause);
+    return{title:s.ex,text:[pick||null,tag||null,"Target "+target,P.paused?"Paused":null].filter(Boolean).join(" · "),endsAt,actions:acts,wear};
   }
   const n=upcoming(P.i),w=n&&weighted(n.ex)?pickW(n.ex):null;
   const text=n?`Next: ${n.ex}${w?" · grab "+w+" lb":""}${P.paused?" · Paused":""}`:"Last one done";
   const acts=[{id:"skip",label:s.t==="prep"?"Start now":"Skip rest"},{id:"more",label:"+15 s"}];
   const l=P.log[P.log.length-1];
   if(l&&(l.w!=null||l.target))acts.push({id:"fix",label:"Fix set",input:weighted(l.ex)?"Fix last set, like 25 10":"Reps you did",choices:l.w!=null?[`${l.w} lb × ${l.reps??""}`.trim(),`${l.w} lb × ${Math.max(1,(l.reps||l.target||2)-1)}`,`${l.w} lb × ${Math.max(1,(l.reps||l.target||3)-2)}`]:[]});
-  return{title:s.t==="prep"?"Get ready":"Rest",text,endsAt,actions:acts};
+  const wear=[{id:"skip",label:s.t==="prep"?"Start now":"Skip rest"},{id:"more",label:"+15 s"}];
+  if(l){const lp=[l.w!=null?l.w+" lb":null,l.reps!=null?l.reps+" reps":null].filter(Boolean).join(" × ");
+    if(l.reps!=null)wear.push({id:"fRepDown",label:"Last set: reps −1"},{id:"fRepUp",label:"Last set: reps +1"});
+    if(weighted(l.ex))wear.push({id:"fwDown",label:"Last set: lighter"},{id:"fwUp",label:"Last set: heavier"});
+    const fx=acts.find(a=>a.id==="fix");if(fx)wear.push({...fx,label:"Fix by voice or typing"});
+    if(lp)return{title:s.t==="prep"?"Get ready":"Rest",text:text+" · Logged "+lp,endsAt,actions:acts,wear}}
+  return{title:s.t==="prep"?"Get ready":"Rest",text,endsAt,actions:acts,wear};
 }
 function sessionSync(){
   if(!window.__session||!P||!P.started||P.done)return;
@@ -1024,6 +1036,13 @@ function remoteAction(a){
   const s=P.steps[P.i];if(!s)return;
   const togglePause=()=>{P.paused=!P.paused;if(!P.paused)P.end=Date.now()+P.left*1000;else{P.left=Math.max(0,(P.end-Date.now())/1000);try{speechSynthesis.cancel()}catch(e){}}render()};
   if(a.id==="pause")return togglePause();
+  const step=(w,d)=>{const L=WEIGHTS.slice();if(w==null)return L[Math.floor(L.length/2)];if(!L.includes(w)){L.push(w);L.sort((x,y)=>x-y)}const k=L.indexOf(w)+d;return L[Math.max(0,Math.min(L.length-1,k))]};
+  if(s.t==="work"){const mx=maxReps(s);
+    if(a.id==="repUp"||a.id==="repDown"){if(mx){P.rsel=Math.max(1,(P.rsel??mx)+(a.id==="repUp"?1:-1));saveRes();render()}return}
+    if(a.id==="wUp"||a.id==="wDown"){if(weighted(s.ex)){P.wsel[s.ex]=step(pickW(s.ex),a.id==="wUp"?1:-1);saveRes();render()}return}}
+  else{const l=P.log[P.log.length-1];
+    if(l&&(a.id==="fRepUp"||a.id==="fRepDown")){if(l.reps!=null){l.reps=Math.max(0,l.reps+(a.id==="fRepUp"?1:-1));saveRes();savePartial();render()}return}
+    if(l&&(a.id==="fwUp"||a.id==="fwDown")){if(weighted(l.ex)){l.w=step(l.w,a.id==="fwUp"?1:-1);P.wsel[l.ex]=l.w;saveRes();savePartial();render()}return}}
   if(s.t==="work"){
     if(a.id==="done"){if(P.paused&&P.total)P.paused=false;if(P.total)logNow();else main();return}
     if(a.id==="log"){const v=parseWR(a.text,s.ex);if(v.w!=null&&weighted(s.ex))P.wsel[s.ex]=v.w;if(v.r!=null&&maxReps(s))P.rsel=Math.min(200,v.r);
