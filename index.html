@@ -196,7 +196,10 @@ body.fsmode .move h1{font-size:1.5rem}
 .pick .lab{display:flex;justify-content:space-between;font-size:.85rem;font-weight:600;color:var(--muted)}
 .wrap>*,.pick,.pick>*{min-width:0;max-width:100%}
 .chips{display:flex;gap:6px}
-.chips.grid8{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}
+.chips.grid8{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:5px}
+.chip.over{border-color:var(--good)}
+.chip.over[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:var(--card)}
+.chip.wtx,.chip.ewtx,.chip.rpx,.chip.erpx{font-family:var(--f-body);font-size:.85rem;font-weight:700;color:var(--accent-text)}
 .chips.scroll{overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px;scrollbar-width:none}
 .chips.scroll::-webkit-scrollbar{display:none}
 .chip{flex:1;min-width:0;height:48px;padding:0;border-radius:14px;border:1px solid var(--line);background:var(--card);font-family:var(--f-display);font-weight:600;font-size:1rem;font-variant-numeric:tabular-nums}
@@ -324,7 +327,8 @@ const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat"];
 /* Week runs Sunday to Friday: program days keep their saved keys (Mon..Sat) but show as Sun..Fri. */
 const SHOW={Mon:"Sun",Tue:"Mon",Wed:"Tue",Thu:"Wed",Fri:"Thu",Sat:"Fri"};
 const DAYNAME={Mon:"Sunday",Tue:"Monday",Wed:"Tuesday",Thu:"Wednesday",Fri:"Thursday",Sat:"Friday"};
-const WEIGHTS=[8,10,15,20,25,30,35,40];
+const WEIGHTS_DEFAULT=[8,10,15,20,25,30,35,40];
+let WEIGHTS=WEIGHTS_DEFAULT.slice();
 const DEF={restMove:10,restRound:60,restSet:45,mode:"tap",voice:"on",beep:"on",name:"",voiceName:"",rate:1.05,tick:"on",kavana:"on",hashem:"a"};
 // Shaun's pace: seconds per rep by collection, and each video's run time (used to size the rests)
 const TEMPO={"C1":2,"C2":4,"C3":3};
@@ -334,6 +338,7 @@ const paced=()=>S.mode==="shaun";
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function store(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 let S={...DEF,...load("ddt-settings",{})};
+if(Array.isArray(S.weights)&&S.weights.length)WEIGHTS=S.weights.slice().sort((a,b)=>a-b);
 let coll=load("ddt-coll",0)|0;
 let LAST=load("ddt-last",{}),RES=load("ddt-resume",null);
 /* Saved data: rounds (each 12-week run with its tracker), sessions (every finished workout, every set),
@@ -597,6 +602,7 @@ function home(){
   h+=`<div class="sect">All workouts</div><div class="seg" role="tablist">${COLL.map((x,i)=>`<button role="tab" id="tab${i}" data-i="${i}" aria-selected="${i===coll}">${x.short} ${x.name}<small>${x.wk}</small></button>`).join("")}</div>
     <div class="days">${DAYS.map(d=>{const st=build(C.k,d);if(!st.length)return"";return `<button class="day" data-d="${d}"><span class="dw">${SHOW[d]}</span><span><b>${esc(wname(C.k,d))}</b><small>${d==="Sat"?"Optional low-impact cardio":moveList(st).length+" moves"}</small></span><span class="num">~${mins(estimate(st))}</span></button>`}).join("")}</div>`;
   h+=`<details class="card" id="sets"><summary>Settings</summary>
+    ${dumbbellRow()}
     ${sel("restMove","Rest between moves","Inside a circuit or superset",[0,5,10,15,20,30],v=>v?v+" s":"None")}
     ${sel("restRound","Rest between rounds","After each full circuit",[30,45,60,75,90,120],v=>v+" s")}
     ${sel("restSet","Rest between sets","Single exercises, set by set",[30,45,60,75,90],v=>v+" s")}
@@ -628,7 +634,7 @@ function home(){
   $$(".cell").forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(TR[k])delete TR[k];else TR[k]=Date.now();saveRound();home();$("#trk").open=true});
   fillVoices();
   const ri=$("#reintro");if(ri)ri.onclick=()=>{store("ddt-onboarded",null);intro()};
-  const wp=$("#wipe");if(wp)wp.onclick=askWipe;bindSync();
+  const wp=$("#wipe");if(wp)wp.onclick=askWipe;bindSync();bindDumbbells();
   const tv=$("#testv");if(tv)tv.onclick=()=>say("Next, shoulder press. Grab the 25s.",true,S.describe!=="off"?spoken("Shoulder Press"):"");
   $$("#sets select").forEach(s=>s.onchange=()=>{const v=s.value;S[s.id]=s.id==="voiceName"?v:(isNaN(+v)?v:+v);store("ddt-settings",S);home();$("#sets").open=true;if(s.id==="hashem")say(kavSpoken(),true)});
   const g=$("#gonext");if(g)g.onclick=()=>start(COLL[collOfWeek(nx.w)].k,nx.d,nx.w);
@@ -889,8 +895,8 @@ function render(){
       h+=`<div class="card pad pick">`;
       if(max)h+=`<div class="target"><b>Target ${esc(s.reps)}${/^\d+$/.test(s.reps)?" reps":""}</b><span class="muted" style="font-size:.88rem">${lastTxt}</span></div>`;
       else if(lastTxt)h+=`<div class="target"><b>${s.dur}s</b><span class="muted" style="font-size:.88rem">${lastTxt}</span></div>`;
-      if(weighted(s.ex)){const w=pickW(s.ex);h+=`<div class="lab"><span>Weight (lb)</span>${w?"":"<span>Tap yours</span>"}</div><div class="chips grid8" role="group" aria-label="Weight used">${WEIGHTS.map(x=>`<button class="chip wt${pv&&pv.w===x?" was":""}" data-w="${x}" aria-pressed="${w===x}">${x}</button>`).join("")}</div>${pv&&pv.w?`<div class="wasline">Last time, set ${pvSet}: <b>${pv.w} lb</b> · ${fmtDate(PV.date)}</div>`:""}`}
-      if(max){h+=`<div class="lab"><span>Reps done</span><span id="rlab">${P.rsel}</span></div><div class="chips scroll" id="reps" role="group" aria-label="Reps done">${Array.from({length:max},(_,i)=>max-i).map(n=>`<button class="chip rp ${n<max?"short":""}${pv&&pv.reps===n?" was":""}" data-r="${n}" aria-pressed="${P.rsel===n}">${n}</button>`).join("")}</div>${pv&&pv.reps!=null?`<div class="wasline">Last time, set ${pvSet}: <b>${pv.reps} of ${pv.target||pv.reps} reps</b>${pv.w?` at ${pv.w} lb`:""}</div>`:""}`}
+      if(weighted(s.ex)){const w=pickW(s.ex);h+=`<div class="lab"><span>Weight (lb)</span>${w?"":"<span>Tap yours</span>"}</div><div class="chips grid8" role="group" aria-label="Weight used">${wtChips("wt",w,pv&&pv.w)}</div>${pv&&pv.w?`<div class="wasline">Last time, set ${pvSet}: <b>${pv.w} lb</b> · ${fmtDate(PV.date)}</div>`:""}`}
+      if(max){h+=`<div class="lab"><span>Reps done</span><span id="rlab">${P.rsel}</span></div><div class="chips scroll" id="reps" role="group" aria-label="Reps done">${rpChips("rp",P.rsel,max,pv&&pv.reps)}</div>${pv&&pv.reps!=null?`<div class="wasline">Last time, set ${pvSet}: <b>${pv.reps} of ${pv.target||pv.reps} reps</b>${pv.w?` at ${pv.w} lb`:""}</div>`:""}`}
       h+=`</div>`;
     }
     h+=P.total?`<button class="big" id="main">${P.paused?"Resume":"Pause"}</button>`:`<button class="big" id="main">Set done</button>`;
@@ -902,8 +908,8 @@ function render(){
       h+=`<div class="card pad pick edit"><div class="logged" style="margin:0">${ICON.check}<span id="lgtxt">Logged <b>${esc(last.ex)}</b>${last.w?` · ${last.w} lb`:""}${last.reps!=null?` × ${last.reps}`:""}</span></div>`;
       if(canW||canR){
         h+=`<div class="pick" style="padding-top:4px"><span class="note" style="margin:0">Tap to fix this set if needed</span>`;
-        if(canW)h+=`<div class="lab"><span>Weight (lb)</span></div><div class="chips grid8" role="group" aria-label="Weight used on last set">${WEIGHTS.map(x=>`<button class="chip ewt" data-w="${x}" aria-pressed="${last.w===x}">${x}</button>`).join("")}</div>`;
-        if(canR)h+=`<div class="lab"><span>Reps done</span><span id="erlab">${last.reps}</span></div><div class="chips scroll" role="group" aria-label="Reps done on last set">${Array.from({length:last.target},(_,i)=>last.target-i).map(n=>`<button class="chip erp ${n<last.target?"short":""}" data-r="${n}" aria-pressed="${last.reps===n}">${n}</button>`).join("")}</div>`;
+        if(canW)h+=`<div class="lab"><span>Weight (lb)</span></div><div class="chips grid8" role="group" aria-label="Weight used on last set">${wtChips("ewt",last.w,null)}</div>`;
+        if(canR)h+=`<div class="lab"><span>Reps done</span><span id="erlab">${last.reps}</span></div><div class="chips scroll" role="group" aria-label="Reps done on last set">${rpChips("erp",last.reps,last.target,null)}</div>`;
         h+=`</div>`;
       }
       h+=`</div>`;
@@ -931,6 +937,11 @@ function render(){
   $$(".chip.ewt").forEach(b=>b.onclick=()=>{const l=P.log[P.log.length-1];l.w=+b.dataset.w;P.wsel[l.ex]=l.w;$$(".chip.ewt").forEach(c=>c.setAttribute("aria-pressed",c===b));lg();const g=$(".nextcard .grab");if(g&&upcoming(P.i)&&upcoming(P.i).ex===l.ex)g.textContent="Grab: "+l.w+" lb"});
   $$(".chip.erp").forEach(b=>b.onclick=()=>{const l=P.log[P.log.length-1];l.reps=+b.dataset.r;$("#erlab").textContent=l.reps;$$(".chip.erp").forEach(c=>c.setAttribute("aria-pressed",c===b));lg()});
   $$(".chip.rp").forEach(b=>b.onclick=()=>{P.rsel=+b.dataset.r;$("#rlab").textContent=P.rsel;$$(".chip.rp").forEach(c=>c.setAttribute("aria-pressed",c===b))});
+  {const x=$(".chip.rpx");if(x)x.onclick=()=>askNumber("Reps done","Any number, even past the target",P.rsel,v=>{P.rsel=Math.round(v);saveRes();render()})}
+  {const x=$(".chip.wtx");if(x)x.onclick=()=>askNumber("Weight used","Pounds per dumbbell, like 45 or 12.5",pickW(s.ex),v=>{P.wsel[s.ex]=v;saveRes();render()})}
+  {const l=P.log[P.log.length-1];const x=$(".chip.erpx");if(x&&l)x.onclick=()=>askNumber("Reps you did","Any number, even past the target",l.reps,v=>{l.reps=Math.round(v);saveRes();savePartial();render()});
+   const y=$(".chip.ewtx");if(y&&l)y.onclick=()=>askNumber("Weight you used","Pounds per dumbbell",l.w,v=>{l.w=v;P.wsel[l.ex]=v;saveRes();savePartial();render()})}
+  centerChips();
   paint();
 }
 function moveCard(s,tag,cls,sub){
@@ -1002,7 +1013,7 @@ function parseWR(text,ex){
     if(/lb|pound/.test(t)||(!/rep/.test(t)&&weighted(ex)&&WEIGHTS.includes(n)&&n>20))w=n;
     else if(n>60&&s.length>=3){for(const k of [2,1]){const a=+s.slice(0,-k),b=+s.slice(-k);if(WEIGHTS.includes(a)&&b>0){w=a;r=b;break}}if(w==null)r=n}
     else r=n}
-  if(w!=null)w=snap(w);
+  if(w!=null){const s2=snap(w);if(Math.abs(s2-w)<=2)w=s2}
   return{w,r:r!=null?Math.max(0,Math.round(r)):null};
 }
 function remoteAction(a){
@@ -1012,13 +1023,13 @@ function remoteAction(a){
   if(a.id==="pause")return togglePause();
   if(s.t==="work"){
     if(a.id==="done"){if(P.paused&&P.total)P.paused=false;if(P.total)logNow();else main();return}
-    if(a.id==="log"){const v=parseWR(a.text,s.ex);if(v.w!=null&&weighted(s.ex))P.wsel[s.ex]=v.w;if(v.r!=null&&maxReps(s))P.rsel=Math.min(maxReps(s),v.r);
+    if(a.id==="log"){const v=parseWR(a.text,s.ex);if(v.w!=null&&weighted(s.ex))P.wsel[s.ex]=v.w;if(v.r!=null&&maxReps(s))P.rsel=Math.min(200,v.r);
       {const lw=weighted(s.ex)?pickW(s.ex):null,lr=maxReps(s)?(P.rsel??maxReps(s)):null;P._said=`Logged${lw?" "+lw+" pounds":""}${lw&&lr!=null?",":""}${lr!=null?" "+lr+" reps":""}.`+(v.w==null&&v.r==null?" I didn't catch numbers, so I used your current picks.":"")}if(P.total)logNow();else main();return}
   }else{
     if(a.id==="skip")return enter(P.i+1);
     if(a.id==="more"){addRest();return sessionSync()}
     if(a.id==="fix"){const l=P.log[P.log.length-1];if(!l)return;const v=parseWR(a.text,l.ex);
-      if(v.w!=null&&weighted(l.ex)){l.w=v.w;P.wsel[l.ex]=v.w}if(v.r!=null&&l.target)l.reps=Math.min(l.target,v.r);
+      if(v.w!=null&&weighted(l.ex)){l.w=v.w;P.wsel[l.ex]=v.w}if(v.r!=null&&l.target)l.reps=Math.min(200,v.r);
       saveRes();savePartial();render();say(`Fixed. ${l.w?l.w+" pounds":""}${l.reps!=null?", "+l.reps+" reps":""}.`,false,"",true)}
   }
 }
@@ -1154,6 +1165,42 @@ function toast(t){let el=$("#toast");if(!el){el=document.createElement("div");el
 // any tap during a workout makes this the device that talks, and shares what changed
 document.addEventListener("pointerdown",()=>{if(VIEW==="player"||VIEW==="summary")claimSpeaker()},true);
 document.addEventListener("click",e=>{if(VIEW==="player"&&e.target.closest(".chip"))setTimeout(syncSend,0)},true);
+/* ---------- Weight and rep pickers (any weight, any rep count) ---------- */
+const fmtW=w=>String(Math.round(w*10)/10);
+function wtChips(cls,cur,was){
+  const list=WEIGHTS.slice();if(cur!=null&&!list.includes(cur))list.push(cur);list.sort((a,b)=>a-b);
+  return list.map(x=>`<button class="chip ${cls}${was===x?" was":""}" data-w="${x}" aria-pressed="${cur===x}">${fmtW(x)}</button>`).join("")+`<button class="chip ${cls}x" aria-label="Other weight">Other</button>`;
+}
+function rpChips(cls,cur,max,was){
+  const top=Math.max(max+5,cur||0);let out=`<button class="chip ${cls}x" aria-label="Type a rep count" style="flex:0 0 64px">Other</button>`;
+  for(let n=top;n>=1;n--)out+=`<button class="chip ${cls} ${n<max?"short":n>max?"over":""}${was===n?" was":""}" data-r="${n}" aria-pressed="${cur===n}">${n}</button>`;
+  return out;
+}
+function askNumber(title,hint,init,cb){
+  closeReview();
+  const el=document.createElement("div");el.className="rv";el.id="rv";
+  el.innerHTML=`<div class="rvs" role="dialog" aria-modal="true" aria-label="${esc(title)}" style="padding:22px 18px max(18px,env(safe-area-inset-bottom,0px))"><div class="rvb" style="padding:0">
+    <h2>${esc(title)}</h2>${hint?`<p class="muted">${esc(hint)}</p>`:""}
+    <input class="bin" id="asknum" type="number" inputmode="decimal" step="0.5" min="0" value="${init??""}" style="font-size:1.6rem;height:60px;text-align:center">
+    <div class="rvnav" style="grid-template-columns:1fr 1fr"><button id="askno">Cancel</button><button id="askok" style="background:var(--accent);color:var(--accent-ink)">Save</button></div></div></div>`;
+  document.body.appendChild(el);
+  const inp=$("#asknum");setTimeout(()=>{inp.focus();inp.select()},50);
+  const ok=()=>{const v=+inp.value;if(!(v>0&&v<1000))return inp.focus();closeReview();cb(Math.round(v*10)/10)};
+  el.onclick=e=>{if(e.target===el)closeReview()};$("#askno").onclick=closeReview;$("#askok").onclick=ok;
+  inp.onkeydown=e=>{if(e.key==="Enter")ok()};
+}
+function centerChips(){$$(".chips.scroll").forEach(r=>{const c=r.querySelector('[aria-pressed="true"]');if(c)r.scrollLeft=c.offsetLeft-r.clientWidth/2+c.clientWidth/2})}
+function dumbbellRow(){
+  const custom=JSON.stringify(WEIGHTS)!==JSON.stringify(WEIGHTS_DEFAULT);
+  return `<div class="set-row" style="flex-direction:column;align-items:stretch"><label>My dumbbells<small>The weights you can pick during a set. Tap one to remove it.</small></label>
+    <div class="chips" style="flex-wrap:wrap;gap:6px">${WEIGHTS.map(w=>`<button class="chip dbw" data-w="${w}" style="flex:0 0 auto;padding:0 12px" aria-label="Remove ${fmtW(w)} pounds">${fmtW(w)} ×</button>`).join("")}<button class="chip dbadd" style="flex:0 0 auto;padding:0 14px">+ Add</button>${custom?`<button class="chip dbreset" style="flex:0 0 auto;padding:0 14px">Reset</button>`:""}</div></div>`;
+}
+function saveWeights(list){WEIGHTS=[...new Set(list)].filter(x=>x>0).sort((a,b)=>a-b);S.weights=WEIGHTS.slice();store("ddt-settings",S);home();const d=$("#sets");if(d)d.open=true}
+function bindDumbbells(){
+  $$(".chip.dbw").forEach(b=>b.onclick=()=>{if(WEIGHTS.length<=1)return;saveWeights(WEIGHTS.filter(x=>x!==+b.dataset.w))});
+  const a=$(".chip.dbadd");if(a)a.onclick=()=>askNumber("Add a dumbbell","Weight in pounds, like 45 or 12.5","",v=>saveWeights(WEIGHTS.concat(v)));
+  const r=$(".chip.dbreset");if(r)r.onclick=()=>saveWeights(WEIGHTS_DEFAULT.slice());
+}
 /* ---------- Review a move before starting ---------- */
 function openReview(i){
   const m=P.moves[i];if(!m)return;
