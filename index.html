@@ -324,7 +324,7 @@ const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat"];
 const SHOW={Mon:"Sun",Tue:"Mon",Wed:"Tue",Thu:"Wed",Fri:"Thu",Sat:"Fri"};
 const DAYNAME={Mon:"Sunday",Tue:"Monday",Wed:"Tuesday",Thu:"Wednesday",Fri:"Thursday",Sat:"Friday"};
 const WEIGHTS=[8,10,15,20,25,30,35,40];
-const DEF={restMove:10,restRound:60,restSet:45,mode:"tap",voice:"on",beep:"on",name:"",voiceName:"",rate:1.05,tick:"on"};
+const DEF={restMove:10,restRound:60,restSet:45,mode:"tap",voice:"on",beep:"on",name:"",voiceName:"",rate:1.05,tick:"on",kavana:"on"};
 // Shaun's pace: seconds per rep by collection, and each video's run time (used to size the rests)
 const TEMPO={"C1":2,"C2":4,"C3":3};
 const VID={"C1|Mon":2797,"C1|Tue":2720,"C1|Wed":2812,"C1|Thu":3015,"C1|Fri":2700,"C2|Mon":3102,"C2|Tue":2734,"C2|Wed":2382,"C2|Thu":2885,"C2|Fri":2492,"C3|Mon":2396,"C3|Tue":2721,"C3|Wed":2360,"C3|Thu":3074,"C3|Fri":2220};
@@ -607,6 +607,7 @@ function home(){
     <div class="set-row"><span>Hear it</span><button class="sm sec" id="testv">Test voice</button></div>
     ${sel("voice","Voice cues","Reads out each move",["on","off"],v=>v==="on"?"On":"Off")}
     ${sel("describe","Describe moves","Reads a quick setup the first time each move comes up",["on","off"],v=>v==="on"?"On":"Off")}
+    ${sel("kavana","Hashem reminder","Said before you start and between rounds",["on","off"],v=>v==="on"?"On":"Off")}
     ${sel("beep","Countdown beeps","Last 3 seconds",["on","off"],v=>v==="on"?"On":"Off")}
     <div style="height:8px"></div></details>
     <details class="card" id="rounds"><summary>Rounds &amp; backup</summary>
@@ -796,6 +797,7 @@ function repPhase(s){// for paced rep sets: which rep you're on and whether you'
   return{rep:Math.min(maxReps(s),r+1),down:s.tp>=4&&inRep<3,r}}
 function upcoming(i){return P.steps.slice(i+1).find(x=>x.t==="work")}
 function prevWork(i){return P.steps.slice(0,i).reverse().find(x=>x.t==="work")}
+const KAVANA="Reminder to have in mind that you are working out to stay healthy to serve Hashem.";
 function enter(i){
   P.i=i;P._alert=true;const s=P.steps[i];if(!s){finish();return}
   P.total=stepLen(s);P.left=P.total;P.end=Date.now()+P.left*1000;P.lastBeep=null;P.lastRep=-1;P.lastUD=null;P.fixOpen=false;
@@ -811,7 +813,8 @@ function enter(i){
     const grab=nm&&w?` Grab the ${w}s.`:"";
     let desc="";if(n&&nm&&S.describe!=="off"&&!(P.described||(P.described=new Set())).has(n.ex)){P.described.add(n.ex);desc=spoken(n.ex)}
     const pre=P._said?P._said+" ":"";P._said=null;
-    say(s.t==="prep"?`${pre}Get ready. ${n?n.ex:""}.${grab}`:`${pre}Rest ${s.dur} seconds. Next, ${n?n.ex:"done"}.${grab}`,false,desc);
+    const kav=(s.t==="prep"||s.kind==="round")&&S.kavana!=="off"?KAVANA+" ":"";
+    say(s.t==="prep"?`${pre}${kav}Get ready. ${n?n.ex:""}.${grab}`:`${pre}Rest ${s.dur} seconds. ${kav}Next, ${n?n.ex:"done"}.${grab}`,false,desc);
   }
   saveRes();render();
 }
@@ -898,7 +901,7 @@ function render(){
     }
     h+=`<div class="card timer"><span class="tag ${s.t==="prep"?"":"rest"}">${s.t==="prep"?"Get ready":s.kind==="round"?"Rest · end of round":s.kind==="move"?"Quick rest":"Rest"}</span>
       ${ring(200,16,P.total?P.left/P.total:1,s.t==="prep"?"":"rest",`<b id="tv">${Math.ceil(P.left)}</b><span>${s.t==="prep"?"get set":"seconds"}</span>`)}
-      <div style="display:flex;gap:8px"><button class="sm sec" id="more">+15 s</button><button class="sm sec" id="skiprest">${s.t==="prep"?"Start now":"Skip rest"}</button><button class="sm sec" id="pause">${P.paused?"Resume":"Pause"}</button></div></div></div><div class="colB">`;
+      ${(s.t==="prep"||s.kind==="round")&&S.kavana!=="off"?`<p style="margin:0;text-align:center;font-weight:600;max-width:30ch">${KAVANA}</p>`:""}<div style="display:flex;gap:8px"><button class="sm sec" id="more">+15 s</button><button class="sm sec" id="skiprest">${s.t==="prep"?"Start now":"Skip rest"}</button><button class="sm sec" id="pause">${P.paused?"Resume":"Pause"}</button></div></div></div><div class="colB">`;
     if(show){
       const w=weighted(show.ex)?pickW(show.ex):null,L=lastInfo(show.ex),pic=IMG[show.ex];
       h+=`<div class="card nextcard">${pic?`<div class="shot"><img src="${pic}" alt="${esc(show.ex)} start and finish"></div>`:`<div class="shot"></div>`}<div><span class="kick muted">Up next</span><h2>${esc(show.ex)}</h2><p>${esc(show.dur?show.dur+" s":show.reps+(/^\d+$/.test(show.reps)?" reps":""))}${show.circuit?` · round ${show.round}/${show.rounds}`:show.sets>1?` · set ${show.set}/${show.sets}`:""}</p>${weighted(show.ex)?`<div class="grab">${w?`Grab: ${w} lb`:"Pick your weight"}${L&&L.next?` <span class="up">· or ${L.next}</span>`:""}</div>`:""}</div></div>`;
