@@ -33,6 +33,7 @@ jobs:
           mkdir www assets
           cp ../native/capacitor.config.json ../native/native.js .
           node ../native/make-index.js ../index.html www/index.html
+          cp -r ../vendor www/
           npx esbuild native.js --bundle --format=iife --outfile=www/native.js
           npx cap add android
           sed -i 's/minSdkVersion = 22/minSdkVersion = 26/' android/variables.gradle
