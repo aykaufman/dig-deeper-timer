@@ -420,7 +420,7 @@ async function backup(){
   const rows=[["date","round","week","day","workout","move","set","weight_lb","reps","target"]];
   SESS.slice().reverse().forEach(s=>{const r=ROUNDS[s.round]||{};const cnt={};(s.log||[]).forEach(l=>{cnt[l.ex]=(cnt[l.ex]||0)+1;rows.push([new Date(s.date).toISOString().slice(0,10),r.label||s.round,s.week||"",SHOW[s.d]||s.d,s.w,l.ex,cnt[l.ex],l.w??"",l.reps??"",l.target??""])});if(!(s.log||[]).length)rows.push([new Date(s.date).toISOString().slice(0,10),r.label||s.round,s.week||"",SHOW[s.d]||s.d,s.w,"","","","",""])});
   const csv=rows.map(r=>r.map(v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(",")).join("\n");
-  const msg=$("#bkmsg");
+  const msg=$("#rv #bkmsg")||$("#bkmsg");// show the message in the delete box when it's open
   let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}
   if(!dl){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`dig-deeper-log-${new Date().toISOString().slice(0,10)}.csv`;document.body.appendChild(a);a.click();a.remove();if(msg)msg.textContent="Backup saved to your downloads."}catch(e){if(msg)msg.textContent="Couldn't save the file here."}return}
   try{await dl.save({filename:`dig-deeper-log-${new Date().toISOString().slice(0,10)}.csv`,data:csv});if(msg)msg.textContent="Backup saved."}
@@ -495,7 +495,7 @@ function estimate(st){return st.reduce((a,s)=>a+(s.dur||(paced()?repCount(s.reps
 function moveList(steps){const m=[];steps.forEach(s=>{if(s.t==="work"&&!m.includes(s.ex))m.push(s.ex)});return m}
 function ring(size,stroke,frac,cls,inner){
   const r=(size-stroke)/2,c=2*Math.PI*r;
-  return `<div class="ring ${cls||""}" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"/><circle class="val" id="rv" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c*(1-frac)).toFixed(1)}" data-c="${c.toFixed(1)}"/></svg><div class="mid" id="rm">${inner}</div></div>`;
+  return `<div class="ring ${cls||""}" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"/><circle class="val" id="ringv" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c*(1-frac)).toFixed(1)}" data-c="${c.toFixed(1)}"/></svg><div class="mid" id="rm">${inner}</div></div>`;
 }
 
 /* ---------- Home ---------- */
@@ -702,7 +702,7 @@ function bodyCard(){
       <div class="bst"><b>${fmt1(b.bmi)}</b><span>BMI</span><small>Doesn't account for muscle</small></div>
     </div>${spark()}`;
   }else h+=`<p class="note" style="margin:0 0 10px">Log your weight to see your trend, daily calorie burn and pace to your goal.</p>`;
-  h+=`<div class="wrow"><label for="wt">${today?"Today's weight (saved, tap to change)":"Today's weight"}<input class="bin" id="wt" type="number" inputmode="decimal" step="0.1" min="60" max="500" value="${today?today.lb:(b?b.lb:190)}"></label><button class="sm pri" id="wsave">Save</button></div>
+  h+=`<div class="wrow"><label for="wt">${today?"Today's weight (saved, tap to change)":"Today's weight"}<input class="bin" id="wt" type="number" inputmode="decimal" step="0.1" min="60" max="500" value="${today?today.lb:(b?b.lb:"")}" placeholder="e.g. 185"></label><button class="sm pri" id="wsave">Save</button></div>
     <details id="bprof"><summary style="font-family:var(--f-body);font-size:.9rem;padding:4px 0 12px">Your details</summary>
     <div class="pgrid">
       <label for="bage">Age<input class="bin" id="bage" type="number" inputmode="numeric" value="${BODY.age}"></label>
@@ -746,7 +746,7 @@ function coachPrompt(){
   const weigh=WEIGH.slice(-20).map(x=>`${x.day}: ${x.lb} lb`).join("\n");
   return `You are a supportive, direct strength coach. Review ${S.name||"the user"}'s training log for Shaun T's 12-week DIG DEEPER dumbbell program and comment on his progress.
 
-About him: ${BODY.age}-year-old ${BODY.sex==="f"?"woman":"man"}, ${Math.floor(BODY.hin/12)}'${BODY.hin%12}", goal weight ${BODY.goal} lb, protein goal ${BODY.protein} g/day. Trains at home with an adjustable bench and one pair each of 8, 10, 15, 20, 25, 30, 35 and 40 lb dumbbells (nothing in between, nothing heavier).
+About him: ${BODY.age}-year-old ${BODY.sex==="f"?"woman":"man"}, ${Math.floor(BODY.hin/12)}'${BODY.hin%12}", goal weight ${BODY.goal} lb, protein goal ${BODY.protein} g/day. Trains at home with an adjustable bench and one pair each of ${WEIGHTS.map(fmtW).join(", ").replace(/, ([^,]*)$/," and $1")} lb dumbbells (nothing in between, nothing heavier).
 Program: 3 collections of 4 weeks (C1 Dynamic Circuits, C2 Sculpt & Define with slow 3-4 s lowering, C3 The Build with heavier lower-rep sets), 5 lifting days a week plus optional Friday cardio. ${ROUNDS[CUR].label}: ${doneAll} of 60 lifting days done; next up is ${nx?"week "+nx.w+" "+DAYNAME[nx.d]:"nothing (program finished)"}. Today is ${new Date().toDateString()}.
 ${b?`Body: ${b.lb} lb on ${b.day}${b.rate!=null?`, trend ${b.rate.toFixed(1)} lb/week`:""}. Estimated burn ~${Math.round(b.liftDay)} kcal on lifting days.`:"No weigh-ins logged yet."}
 
@@ -777,7 +777,7 @@ function sel(id,label,hint,opts,fmt){return `<div class="set-row"><label for="${
 
 /* ---------- Audio ---------- */
 let actx=null;
-function beep(f=880,ms=140){if(S.beep!=="on")return;if(typeof isSpeaker==="function"&&!isSpeaker())return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.25,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}}
+function beep(f=880,ms=140){if(S.beep!=="on")return;if(typeof isSpeaker==="function"&&!isSpeaker())return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==="suspended")actx.resume().catch(()=>{});const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.25,actx.currentTime);g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+ms/1000);o.start();o.stop(actx.currentTime+ms/1000)}catch(e){}}
 function voices(){try{return (speechSynthesis.getVoices()||[]).filter(v=>/^en/i.test(v.lang))}catch(e){return[]}}
 function fillVoices(){const el=$("#voiceName");if(!el)return;const vs=voices();
   el.innerHTML=`<option value="">Phone default</option>`+vs.map(v=>`<option value="${esc(v.name)}" ${S.voiceName===v.name?"selected":""}>${esc(v.name.replace(/^(Google|Microsoft)\s*/,""))} (${esc(v.lang)})</option>`).join("");
@@ -789,6 +789,8 @@ function say(t,force,desc,queue){if((S.voice!=="on"&&!force)||!window.speechSynt
 function spoken(ex){const s=SETUP[ex];if(!s)return"";
   return s.replace(/\bhimself\b/g,"yourself").replace(/\bhis\b/g,"your").replace(/\bhim\b/g,"you").replace(/\bHe\b/g,"You").replace(/\bhe\b/g,"you").replace(/\bDB\b/g,"dumbbell")}
 let lock=null;async function wake(){try{lock=await navigator.wakeLock.request("screen")}catch(e){}}
+// the phone drops the keep-awake lock when you switch apps; take it back when you return mid-workout
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&P&&P.started&&!P.done&&tick)wake()});
 
 /* ---------- Player ---------- */
 let P=null,tick=null;
@@ -838,7 +840,8 @@ function announce(i){
 function logSet(s){
   if(!s||s.t!=="work")return;
   const max=maxReps(s);
-  P.log.push({ex:s.ex,w:weighted(s.ex)?pickW(s.ex):null,reps:s.dur?null:(P.rsel??max),target:max||null});
+  P.log=P.log.filter(l=>l.i!==P.i);// redoing a set replaces it instead of logging it twice
+  P.log.push({ex:s.ex,w:weighted(s.ex)?pickW(s.ex):null,reps:s.dur?null:(P.rsel??max),target:max||null,i:P.i});
   savePartial();
 }
 function loop(){
@@ -866,9 +869,12 @@ function main(){
 }
 function logNow(){logSet(P.steps[P.i]);enter(P.i+1)}
 function jump(d){if(!P.started)begin();let j=P.i+d;
-  if(d<0){while(j>0&&P.steps[j].t!=="work")j--}else{while(j<P.steps.length&&P.steps[j].t!=="work")j++}
+  if(d<0){while(j>0&&P.steps[j].t!=="work")j--;
+    // going back to redo a set: drop what was logged from that set on, so it isn't counted twice
+    const k=Math.max(0,j),n=P.log.length;P.log=P.log.filter(l=>l.i==null||l.i<k);if(P.log.length!==n)savePartial()}
+  else{while(j<P.steps.length&&P.steps[j].t!=="work")j++}
   enter(Math.max(0,j))}
-function addRest(){P.end+=15000;P.left+=15;P.total+=15;paint();syncSend()}
+function addRest(){P.end+=15000;P.left+=15;P.total+=15;paint();syncSend();sessionSync()}
 
 function render(){
   VIEW="player";
@@ -933,7 +939,7 @@ function render(){
   bindFS();
   if(P.pm)drawPM();
   const on=(id,fn)=>{const e=$(id);if(e)e.onclick=fn};
-  on("#main",main);on("#logn",logNow);on("#prev",()=>jump(-1));on("#skip",()=>jump(1));on("#more",addRest);on("#skiprest",()=>enter(P.i+1));on("#pause",()=>{P.paused=!P.paused;if(!P.paused)P.end=Date.now()+P.left*1000;else P.left=Math.max(0,(P.end-Date.now())/1000);render()});
+  on("#main",main);on("#logn",logNow);on("#prev",()=>jump(-1));on("#skip",()=>jump(1));on("#more",addRest);on("#skiprest",()=>enter(P.i+1));on("#pause",()=>{P.paused=!P.paused;if(!P.paused)P.end=Date.now()+P.left*1000;else{P.left=Math.max(0,(P.end-Date.now())/1000);try{speechSynthesis.cancel()}catch(e){}}render()});
   $$(".chip.wt").forEach(b=>b.onclick=()=>{P.wsel[s.ex]=+b.dataset.w;saveRes();$$(".chip.wt").forEach(c=>c.setAttribute("aria-pressed",c===b))});
   const lg=()=>{const l=P.log[P.log.length-1];const e=$("#lgtxt");if(e)e.innerHTML=`Logged <b>${esc(l.ex)}</b>${l.w?` · ${l.w} lb`:""}${l.reps!=null?` × ${l.reps}`:""}`;saveRes();savePartial()};
   $$(".chip.ewt").forEach(b=>b.onclick=()=>{const l=P.log[P.log.length-1];l.w=+b.dataset.w;P.wsel[l.ex]=l.w;$$(".chip.ewt").forEach(c=>c.setAttribute("aria-pressed",c===b));lg();const g=$(".nextcard .grab");if(g&&upcoming(P.i)&&upcoming(P.i).ex===l.ex)g.textContent="Grab: "+l.w+" lb"});
@@ -1274,7 +1280,8 @@ function openReview(i){
   const pc=$("#rvpic");if(pc)pc.onclick=()=>{const lb=document.createElement("div");lb.className="lb";lb.style.zIndex=75;lb.innerHTML=`<b>${esc(m)}</b><img src="${pic}" alt="">`;lb.onclick=()=>lb.remove();document.body.appendChild(lb)};
 }
 function closeReview(){const r=$("#rv");if(r)r.remove()}
-function closePM(){P.pm=false;const d=$("#pm");if(d)d.remove();try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){};try{screen.orientation.unlock()}catch(e){}}
+function closePM(){P.pm=false;const d=$("#pm");if(d)d.remove();if(BIG)return;// stay in full screen mode if it was on before the photo
+  try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){};try{screen.orientation.unlock()}catch(e){}}
 function drawPM(){
   if(!P)return;const s=P.steps[P.i];if(!s){closePM();return}
   const work=s.t==="work",show=work?s:upcoming(P.i);if(!show){closePM();return}
@@ -1296,7 +1303,7 @@ function paint(){
   const pmt=$("#pmt");
   if(pmt&&P&&P.started&&P.total){const s=P.steps[P.i];if(s.t==="work"&&!s.dur){const ph=repPhase(s);pmt.textContent=ph.lead?"–":ph.rep+" / "+maxReps(s)}else pmt.textContent=Math.ceil(P.left)}
   if(!P||!P.total||!P.started)return;
-  const rv=$("#rv"),tv=$("#tv");if(!rv||!tv)return;
+  const rv=$("#ringv"),tv=$("#tv");if(!rv||!tv)return;
   const s=P.steps[P.i];
   if(s.t==="work"&&!s.dur){const ph=repPhase(s),tl=$("#tl");tv.textContent=ph.lead?"–":ph.rep;if(tl)tl.textContent=ph.lead?"get set":`of ${maxReps(s)}${s.tp>=4?(ph.down?" · down":" · up"):""}`}
   else tv.textContent=Math.ceil(P.left);
