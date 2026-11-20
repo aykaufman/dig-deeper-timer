@@ -126,7 +126,7 @@ App.addListener('backButton', () => {
       } catch (e) { return; }
       // make the folder once up front (several downloads creating it at the same moment can fail)
       try { await Filesystem.mkdir({ path: 'img', directory: Directory.Data, recursive: true }); } catch (e) {}
-      const all = [...new Set(Object.values(window.__LOCAL || {}))];
+      const all = [...new Set([...Object.values(window.__LOCAL || {}), ...Object.values(window.__CLIPS || {})])];
       let todo = all.filter(f => !saved.has(f));
       if (!todo.length) return;
       const show = () => pill(`Saving photos to your phone · ${saved.size} of ${all.length}`);
